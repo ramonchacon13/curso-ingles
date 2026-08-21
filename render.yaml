@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: curso-ingles-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    releaseCommand: python release_cmd.py
+    startCommand: gunicorn main:app -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: deepseek/deepseek-chat
+
+  - type: web
+    name: curso-ingles-web
+    runtime: static
+    rootDir: react-app
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://curso-ingles-api.onrender.com

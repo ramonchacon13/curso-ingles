@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+env/
+
+# Entorno / secretos
+.env
+.env.*
+!.env.example
+
+# Node / frontend
+node_modules/
+dist/
+npm-debug.log*
+
+# Render / OS
+.render/
+.DS_Store
+Thumbs.db

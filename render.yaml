@@ -23,7 +23,6 @@ services:
     name: curso-ingles-web
     runtime: static
     rootDir: react-app
-    plan: free
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:

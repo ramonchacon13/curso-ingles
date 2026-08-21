@@ -28,17 +28,24 @@ def health():
     return {"status": "ok", "app": "CursoIngles"}
 
 
-Base.metadata.create_all(bind=engine)
+def _init_db():
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"AVISO: create_all falló ({e})")
+    try:
+        from sqlalchemy import func, select
+        from database import SessionLocal
+        import models
+        with SessionLocal() as db:
+            if db.scalar(select(func.count(models.Level.id))) == 0:
+                import subprocess, sys
+                print("BD vacía: sembrando contenido inicial...")
+                subprocess.run([sys.executable, "seed_content.py"], check=True)
+                print("Seed completado.")
+    except Exception as e:
+        print(f"AVISO: no se pudo sembrar en este arranque ({e}).")
 
-try:
-    from sqlalchemy import func, select
-    from database import SessionLocal
-    import models
-    with SessionLocal() as db:
-        if db.scalar(select(func.count(models.Level.id))) == 0:
-            import subprocess, sys
-            print("BD vacía: sembrando contenido inicial...")
-            subprocess.run([sys.executable, "seed_content.py"], check=True)
-            print("Seed completado.")
-except Exception as e:
-    print(f"AVISO: no se pudo sembrar en este arranque ({e}).")
+
+import threading
+threading.Thread(target=_init_db, daemon=True).start()

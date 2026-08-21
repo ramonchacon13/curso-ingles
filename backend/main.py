@@ -29,3 +29,16 @@ def health():
 
 
 Base.metadata.create_all(bind=engine)
+
+try:
+    from sqlalchemy import func, select
+    from database import SessionLocal
+    import models
+    with SessionLocal() as db:
+        if db.scalar(select(func.count(models.Level.id))) == 0:
+            import subprocess, sys
+            print("BD vacía: sembrando contenido inicial...")
+            subprocess.run([sys.executable, "seed_content.py"], check=True)
+            print("Seed completado.")
+except Exception as e:
+    print(f"AVISO: no se pudo sembrar en este arranque ({e}).")

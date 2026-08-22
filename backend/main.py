@@ -30,21 +30,11 @@ def health():
 
 @app.get("/api/debug")
 def debug():
-    info = {}
-    try:
-        Base.metadata.create_all(bind=engine)
-        info["create_all"] = "ok"
-    except Exception as e:
-        info["create_all"] = f"ERROR: {e}"
-    try:
-        from sqlalchemy import select, func
-        from database import SessionLocal
-        import models
-        with SessionLocal() as db:
-            info["levels_count"] = db.scalar(select(func.count(models.Level.id)))
-    except Exception as e:
-        info["query"] = f"ERROR: {e}"
-    return info
+    import os
+    import re
+    raw = os.environ.get("DATABASE_URL", "(no definido)")
+    masked = re.sub(r'(://[^:]+:)[^@]+(@)', r'\1***\2', raw)
+    return {"database_url": masked}
 
 
 try:

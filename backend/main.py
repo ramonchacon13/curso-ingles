@@ -28,11 +28,13 @@ def health():
     return {"status": "ok", "app": "CursoIngles"}
 
 
-def _init_db():
-    try:
-        Base.metadata.create_all(bind=engine)
-    except Exception as e:
-        print(f"AVISO: create_all falló ({e})")
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"AVISO: create_all falló ({e})")
+
+
+def _seed_if_empty():
     try:
         from sqlalchemy import func, select
         from database import SessionLocal
@@ -48,4 +50,4 @@ def _init_db():
 
 
 import threading
-threading.Thread(target=_init_db, daemon=True).start()
+threading.Thread(target=_seed_if_empty, daemon=True).start()

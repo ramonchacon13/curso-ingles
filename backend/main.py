@@ -28,6 +28,25 @@ def health():
     return {"status": "ok", "app": "CursoIngles"}
 
 
+@app.get("/api/debug")
+def debug():
+    info = {}
+    try:
+        Base.metadata.create_all(bind=engine)
+        info["create_all"] = "ok"
+    except Exception as e:
+        info["create_all"] = f"ERROR: {e}"
+    try:
+        from sqlalchemy import select, func
+        from database import SessionLocal
+        import models
+        with SessionLocal() as db:
+            info["levels_count"] = db.scalar(select(func.count(models.Level.id)))
+    except Exception as e:
+        info["query"] = f"ERROR: {e}"
+    return info
+
+
 try:
     Base.metadata.create_all(bind=engine)
 except Exception as e:

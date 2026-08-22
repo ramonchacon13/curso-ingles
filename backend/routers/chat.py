@@ -1,4 +1,5 @@
 import json
+import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -76,7 +77,14 @@ async def chat_ws(websocket: WebSocket):
 
     try:
         while True:
-            data = await websocket.receive_text()
+            try:
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=10)
+            except asyncio.TimeoutError:
+                try:
+                    await websocket.send_text(json.dumps({"type": "ping"}))
+                except Exception:
+                    break
+                continue
             text = data.strip()
             if not text:
                 continue

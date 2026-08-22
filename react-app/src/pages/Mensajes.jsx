@@ -33,24 +33,35 @@ export default function Mensajes() {
     const wsBase = API_BASE
       ? API_BASE.replace(/^http/, 'ws')
       : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`
-    const ws = new WebSocket(`${wsBase}/api/chat/private/ws?token=${token}&peer=${peer.id}`)
-    wsRef.current = ws
-    setMessages([])
-    setPeerOnline(false)
-
-    ws.onopen = () => setConnected(true)
-    ws.onclose = () => setConnected(false)
-    ws.onmessage = (e) => {
-      const d = JSON.parse(e.data)
-      if (d.type === 'online') {
-        if (d.peer === user.id) setPeerOnline(d.online)
-        return
+    let unmounted = false
+    let timer = null
+    const connect = () => {
+      const ws = new WebSocket(`${wsBase}/api/chat/private/ws?token=${token}&peer=${peer.id}`)
+      wsRef.current = ws
+      setMessages([])
+      setPeerOnline(false)
+      ws.onopen = () => setConnected(true)
+      ws.onclose = () => {
+        setConnected(false)
+        if (!unmounted) timer = setTimeout(connect, 2000)
       }
-      if (d.type === 'msg') {
-        setMessages((m) => [...m, { from: d.from, content: d.content, mine: d.from === user.id, time: nowTime() }])
+      ws.onmessage = (e) => {
+        const d = JSON.parse(e.data)
+        if (d.type === 'online') {
+          if (d.peer === user.id) setPeerOnline(d.online)
+          return
+        }
+        if (d.type === 'msg') {
+          setMessages((m) => [...m, { from: d.from, content: d.content, mine: d.from === user.id, time: nowTime() }])
+        }
       }
     }
-    return () => ws.close()
+    connect()
+    return () => {
+      unmounted = true
+      if (timer) clearTimeout(timer)
+      wsRef.current?.close()
+    }
   }, [peer, user])
 
   useEffect(() => {

@@ -24,26 +24,36 @@ export default function Chat() {
     const wsBase = API_BASE
       ? API_BASE.replace(/^http/, 'ws')
       : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`
-    const ws = new WebSocket(`${wsBase}/api/chat/ws?token=${token}`)
-    wsRef.current = ws
-
-    ws.onopen = () => setConnected(true)
-    ws.onclose = () => setConnected(false)
-    ws.onmessage = (e) => {
-      const data = JSON.parse(e.data)
-      if (data.type === 'online') {
-        setOnline(data.count)
-      } else if (data.type === 'msg') {
-        setMessages((m) => [...m, {
-          user: data.user,
-          content: data.content,
-          time: data.time ? data.time.slice(11, 16) : nowTime(),
-          mine: data.user === user?.nombre,
-        }])
+    let unmounted = false
+    let timer = null
+    const connect = () => {
+      const ws = new WebSocket(`${wsBase}/api/chat/ws?token=${token}`)
+      wsRef.current = ws
+      ws.onopen = () => setConnected(true)
+      ws.onclose = () => {
+        setConnected(false)
+        if (!unmounted) timer = setTimeout(connect, 2000)
+      }
+      ws.onmessage = (e) => {
+        const data = JSON.parse(e.data)
+        if (data.type === 'online') {
+          setOnline(data.count)
+        } else if (data.type === 'msg') {
+          setMessages((m) => [...m, {
+            user: data.user,
+            content: data.content,
+            time: data.time ? data.time.slice(11, 16) : nowTime(),
+            mine: data.user === user?.nombre,
+          }])
+        }
       }
     }
-
-    return () => ws.close()
+    connect()
+    return () => {
+      unmounted = true
+      if (timer) clearTimeout(timer)
+      wsRef.current?.close()
+    }
   }, [user])
 
   useEffect(() => {

@@ -28,16 +28,6 @@ def health():
     return {"status": "ok", "app": "CursoIngles"}
 
 
-@app.get("/api/debug")
-def debug():
-    import os
-    keys = [k for k in os.environ if "ATA" in k or "ATA" in k or "URL" in k or "PG" in k or "POST" in k or "BASE" in k]
-    raw = os.environ.get("DATABASE_URL", "(no definido)")
-    import re
-    masked = re.sub(r'(://[^:]+:)[^@]+(@)', r'\1***\2', raw)
-    return {"env_keys": keys, "database_url": masked}
-
-
 try:
     Base.metadata.create_all(bind=engine)
 except Exception as e:

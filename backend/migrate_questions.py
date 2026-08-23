@@ -153,34 +153,48 @@ def ensure_20_questions():
             if not level:
                 continue
             tests = db.scalars(select(Test).where(Test.level_id == level.id)).all()
-            test = tests[0] if tests else None
-            if test is None:
-                test = Test(level_id=level.id, title=f"Test de Nivel {code}")
-                db.add(test)
+
+            # Reusar un test existente como "Parte 1" (preserva resultados de usuarios)
+            # y crear "Parte 2". Así no borramos registros.
+            test1 = next((t for t in tests if "Parte 1" in t.title), None)
+            test2 = next((t for t in tests if "Parte 2" in t.title), None)
+            if test1 is None:
+                if tests:
+                    test1 = tests[0]
+                    test1.title = f"Test de Nivel {code} - Parte 1"
+                else:
+                    test1 = Test(level_id=level.id, title=f"Test de Nivel {code} - Parte 1")
+                    db.add(test1)
                 db.flush()
-            existing = set()
+            if test2 is None:
+                test2 = Test(level_id=level.id, title=f"Test de Nivel {code} - Parte 2")
+                db.add(test2)
+                db.flush()
+
+            # Mapa prompt -> Question ya existente en este nivel
+            existing = {}
             for t in tests:
                 for q in db.scalars(select(Question).where(Question.test_id == t.id)).all():
-                    existing.add(q.prompt)
-            current_count = len(existing)
-            to_add = max(0, 20 - current_count)
-            added = 0
-            for prompt, options, correct, explanation in bank:
-                if added >= to_add:
-                    break
+                    existing[q.prompt] = q
+
+            for idx, (prompt, options, correct, explanation) in enumerate(bank):
+                target = test1 if idx < 10 else test2
                 if prompt in existing:
-                    continue
-                db.add(Question(
-                    test_id=test.id,
-                    prompt=prompt,
-                    options=options,
-                    correct=correct,
-                    explanation=explanation,
-                ))
-                existing.add(prompt)
-                added += 1
+                    q = existing[prompt]
+                    if q.test_id != target.id:
+                        q.test_id = target.id  # mover de test (no borra resultados)
+                else:
+                    q = Question(
+                        test_id=target.id,
+                        prompt=prompt,
+                        options=options,
+                        correct=correct,
+                        explanation=explanation,
+                    )
+                    db.add(q)
+                    existing[prompt] = q
         db.commit()
-        print("ensure_20_questions: preguntas verificadas/completadas a 20 por nivel.")
+        print("ensure_20_questions: 2 tests x 10 preguntas por nivel listos.")
     except Exception as e:
         db.rollback()
         print(f"AVISO ensure_20_questions: {e}")

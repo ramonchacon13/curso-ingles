@@ -42,7 +42,11 @@ def get_lesson(
         raise HTTPException(status_code=404, detail="Lección no encontrada")
     if lesson.is_premium and not current.is_premium:
         raise HTTPException(status_code=403, detail="Esta lección es solo para miembros premium")
-    return lesson
+    course = db.get(Course, lesson.course_id)
+    level = db.get(Level, course.level_id) if course else None
+    out = LessonOut.from_orm(lesson)
+    out.level_code = level.code if level else None
+    return out
 
 
 @router.post("/lecciones/{lesson_id}/completar", response_model=dict)

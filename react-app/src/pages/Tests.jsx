@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
 
 export default function Tests() {
   const { refresh, user } = useAuth()
+  const [searchParams] = useSearchParams()
   const [niveles, setNiveles] = useState([])
   const [selected, setSelected] = useState(null)
   const [tests, setTests] = useState([])
@@ -16,7 +18,7 @@ export default function Tests() {
   useEffect(() => {
     api.get('/niveles').then((d) => {
       setNiveles(d); setLoading(false)
-      const code = (user && user.nivel) || d[0]?.code
+      const code = searchParams.get('nivel') || (user && user.nivel) || d[0]?.code
       if (code) loadTests(code)
     }).catch(() => setLoading(false))
   }, [])

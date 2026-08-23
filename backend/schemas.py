@@ -43,6 +43,7 @@ class LessonOut(BaseModel):
     content: Optional[str]
     orden: int
     is_premium: bool
+    level_code: Optional[str] = None
 
     class Config:
         from_attributes = True

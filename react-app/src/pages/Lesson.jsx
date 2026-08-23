@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api, userApi } from '../api.js'
 import Icon from '../components/Icon.jsx'
 
 export default function Lesson() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [lesson, setLesson] = useState(null)
   const [error, setError] = useState('')
   const [locked, setLocked] = useState(false)
@@ -31,6 +32,9 @@ export default function Lesson() {
     try {
       const r = await userApi.completarLeccion(id)
       setCompletada(r.completada)
+      if (r.completada && lesson?.level_code) {
+        navigate(`/tests?nivel=${lesson.level_code}`)
+      }
     } catch {
     } finally {
       setBusy(false)
@@ -63,6 +67,11 @@ export default function Lesson() {
         <Icon name={completada ? 'check' : 'circle'} size={18} />
         {completada ? 'Lección completada' : 'Marcar como completada'}
       </button>
+      {lesson.level_code && (
+        <Link to={`/tests?nivel=${lesson.level_code}`} className="btn-secondary" style={{ marginLeft: 12 }}>
+          Ir a las preguntas
+        </Link>
+      )}
     </div>
   )
 }

@@ -279,4 +279,80 @@ a:hover { text-decoration: none; }
 .pay-binance { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding: 14px 16px; border: 1px dashed var(--azul); border-radius: 10px; background: #fff; }
 .pay-label { display: block; font-size: 13px; color: #667; }
 .pay-id { font-size: 20px; letter-spacing: 1px; }
-.donate-note { margin-top: 16px; background: #fff8e6; border: 1px solid #ffe39e; color: #8a6d00; padding: 12px 14px; border-radius: 10px; font-size: 14px; }
+  .donate-note { margin-top: 16px; background: #fff8e6; border: 1px solid #ffe39e; color: #8a6d00; padding: 12px 14px; border-radius: 10px; font-size: 14px; }
+
+/* ===================== RESPONSIVE ===================== */
+html, body { -webkit-text-size-adjust: 100%; }
+img, svg, video { max-width: 100%; height: auto; }
+input, select, textarea, button { max-width: 100%; }
+
+/* Evita desbordamiento horizontal por palabras largas (textos en inglés) */
+.question-prompt, .bubble, .msg-bubble, .lesson-content,
+.test-result, .chat-window, .msg-window, .level-desc, .course-block p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.chat-form input, .msg-form input { min-width: 0; }
+.nav-user { flex-wrap: wrap; }
+
+@media (max-width: 900px) {
+  .container { padding: 22px 16px 56px; }
+  .features, .steps { grid-template-columns: repeat(2, 1fr); }
+  .course-block { padding: 20px; }
+  .msg-layout { grid-template-columns: 220px 1fr; }
+  .dash-actions { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .container { padding: 18px 14px 48px; }
+  .navbar { padding: 10px 14px; }
+  .nav-menu.open { top: 56px; padding: 8px 16px 14px; }
+  .nav-links a { padding: 12px 0; border-bottom: 1px solid var(--borde); }
+
+  .hero { padding: 52px 16px 40px; }
+  .hero h1 { font-size: 32px; }
+  .hero p { font-size: 17px; }
+  .hero-badges { gap: 14px; flex-wrap: wrap; }
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-actions .btn-primary, .hero-actions .btn-secondary { width: 100%; text-align: center; }
+
+  .features, .steps { grid-template-columns: 1fr; gap: 16px; }
+  .feature-card { padding: 22px; }
+
+  .dashboard h1, .tests h1, .chat-page h1, .mensajes-title,
+  .plan-card h2, .card h2 { font-size: 24px; }
+  .dash-actions { grid-template-columns: 1fr; }
+  .levels-grid { grid-template-columns: 1fr; }
+  .progress-levels { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+
+  .course-block { padding: 18px; }
+  .lesson-content { padding: 22px; }
+
+  .test-card { padding: 16px; }
+  .question { padding: 16px; }
+  .question-prompt { font-size: 1.08rem; }
+
+  .msg-layout { grid-template-columns: 1fr; }
+  .msg-sidebar { height: auto; max-height: 200px; }
+  .msg-window { padding: 14px; }
+
+  .plan-card, .card, .auth-page { padding: 22px 18px; }
+
+  .chat-window { height: 58vh; }
+}
+
+@media (max-width: 480px) {
+  .container { padding: 14px 12px 40px; }
+  .hero h1 { font-size: 26px; }
+  .hero p { font-size: 16px; }
+  .dashboard h1, .tests h1, .chat-page h1, .mensajes-title,
+  .plan-card h2, .card h2 { font-size: 21px; }
+  .question-prompt { font-size: 1.02rem; }
+  .q-number { width: 24px; height: 24px; font-size: 13px; }
+  .auth-page { margin: 24px auto; }
+  .chat-window { height: 54vh; }
+  .msg-window { padding: 12px; }
+  .footer { padding: 22px 12px; font-size: 13px; }
+  .btn-primary, .btn-secondary, .btn-ghost { font-size: 14px; padding: 10px 18px; }
+  .level-badge { font-size: 14px; padding: 6px 14px; }
+}

@@ -5,10 +5,12 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from database import SessionLocal, engine, Base
 import models
-from models import Level, Test, Question
-from sqlalchemy import select
+from models import Level, Test, Question, TestResult
+from sqlalchemy import select, func
 
 
+# Objetivo por nivel (múltiplo de 10; se reparte en tests de 10).
+# A1=20, A2=30, B1=40, B2=50, C1=50, C2=50  ->  2/3/4/5/5/5 tests por nivel.
 QUESTIONS_BANK = {
     "A1": [
         ("¿Cómo se dice 'yo soy'?", ["I am", "I is", "I are"], 0, "Primera persona: I am."),
@@ -53,6 +55,16 @@ QUESTIONS_BANK = {
         ("'In' se usa para...", ["meses y años", "un momento concreto", "nada"], 0, "In + meses/años (in July)."),
         ("¿Cómo se dice '¿Qué hiciste?'?", ["What do you do?", "What did you do?", "What are you doing?"], 1, "Did para pasado."),
         ("'Happy' es...", ["triste", "feliz", "grande"], 1, "Happy = feliz."),
+        ("'She has ___ hair.'", ["long", "length", "longly"], 0, "Long = largo (adjetivo)."),
+        ("¿Cómo se dice 'tengo 25 años'?", ["I have 25 years", "I am 25 years old", "I am 25 years"], 1, "I am 25 years old."),
+        ("'They went ___ the store.'", ["to", "at", "in"], 0, "To + lugar."),
+        ("Pasado de 'have':", ["has", "had", "haved"], 1, "Irregular: have -> had."),
+        ("'We ___ TV every night.'", ["watch", "watches", "watching"], 0, "Plural: watch."),
+        ("¿Qué significa 'behind'?", ["delante de", "detrás de", "encima de"], 1, "Behind = detrás de."),
+        ("Comparativo de 'easy':", ["easier", "more easy", "easyer"], 0, "Y consonante -> easier."),
+        ("'I didn't ___ to the party.'", ["went", "go", "gone"], 1, "Tras didn't va verbo base."),
+        ("'There are ___ apples on the tree.'", ["is", "are", "am"], 1, "Plural -> are."),
+        ("¿Cómo se dice 'me gusta el café'?", ["I like coffee", "I like the coffee", "I am liking coffee"], 0, "I like coffee."),
     ],
     "B1": [
         ("Presente continuo de 'eat'", ["I eat", "I am eating", "I eaten"], 1, "am/is/are + -ing."),
@@ -60,7 +72,7 @@ QUESTIONS_BANK = {
         ("'Like' como estado", ["I am liking", "I like", "I liking"], 1, "Verbos de estado no usan -ing."),
         ("Pasado continuo: 'I ___ when you called.'", ["was eating", "ate", "eat"], 0, "Was/were + -ing."),
         ("Comparativo de 'good':", ["gooder", "better", "best"], 1, "Irregular: good -> better."),
-        ("'There ___ some water in the glass.'", ["is", "are", "be"], 0, "Water es incontable? No, incontable en cantidad -> is."),
+        ("'There ___ some water in the glass.'", ["is", "are", "be"], 0, "Water es incontable -> is."),
         ("'I have never ___ to London.'", ["went", "gone", "been"], 2, "Been (estado). Have been."),
         ("Superlativo de 'big':", ["bigest", "biggest", "most big"], 1, "CVC dobla: biggest."),
         ("'She's interested ___ music.'", ["on", "in", "at"], 1, "Interested in."),
@@ -75,6 +87,26 @@ QUESTIONS_BANK = {
         ("¿Cómo se dice 'ya lo he visto'?", ["I already saw it", "I have already seen it", "I see it already"], 1, "Presente perfecto."),
         ("'Although' significa...", ["aunque", "pero", "y"], 0, "Although = aunque."),
         ("Third person de 'study':", ["studys", "studies", "studyies"], 1, "Consonante + y -> ies."),
+        ("'I have lived here ___ 2010.'", ["for", "since", "from"], 1, "Since + punto en el tiempo."),
+        ("Pasado de 'run':", ["ran", "runned", "run"], 0, "Irregular: run -> ran."),
+        ("'She ___ to the doctor yesterday.'", ["goes", "went", "gone"], 1, "Pasado: went."),
+        ("Presente perfecto negativo: 'I ___ finished.'", ["haven't", "hasn't", "don't"], 0, "I haven't."),
+        ("'He's good ___ math.'", ["on", "at", "in"], 1, "Good at."),
+        ("Comparativo de 'bad':", ["bader", "worse", "worst"], 1, "Irregular: bad -> worse."),
+        ("'We use ___ for uncountable nouns.'", ["much", "many", "a"], 1, "Much con incontable."),
+        ("'If I ___ you, I would go.'", ["was", "were", "am"], 1, "Second conditional: were."),
+        ("¿Cómo se dice 'ya he comido'?", ["I already ate", "I have already eaten", "I ate already"], 1, "Presente perfecto."),
+        ("'They are interested ___ the project.'", ["on", "in", "at"], 1, "Interested in."),
+        ("Pasado de 'write':", ["wrote", "written", "writed"], 0, "Irregular: write -> wrote."),
+        ("'Can you ___ me?'", ["help", "helps", "helping"], 0, "Can + base."),
+        ("'She has ___ to Paris twice.'", ["went", "been", "go"], 1, "Been (estado)."),
+        ("'I'm used ___ early.'", ["to get up", "to getting up", "get up"], 1, "Used to + -ing."),
+        ("Superlativo de 'good':", ["goodest", "best", "better"], 1, "Irregular: good -> best."),
+        ("'He suggested ___ to the cinema.'", ["to go", "going", "go"], 1, "Suggest + -ing."),
+        ("'There isn't ___ milk.'", ["some", "any", "many"], 1, "Any en negativas."),
+        ("Pasado de 'teach':", ["taught", "teached", "teached"], 0, "Irregular: teach -> taught."),
+        ("'I have ___ finished my homework.'", ["yet", "already", "still"], 1, "Already en positivas."),
+        ("'We ___ playing when it started to rain.'", ["were", "are", "was"], 0, "Plural: were."),
     ],
     "B2": [
         ("Second conditional", ["If I go, I go", "If I went, I would go", "If I had gone"], 1, "Hipótesis presente: if + past, would."),
@@ -97,6 +129,36 @@ QUESTIONS_BANK = {
         ("First conditional: 'If it rains, I ___ stay.'", ["will", "would", "am"], 0, "First: will."),
         ("'Which' se refiere a...", ["personas", "cosas", "tiempo"], 1, "Which para cosas."),
         ("Phrasal 'get along with':", ["llevarse bien con", "obtener", "irse"], 0, "Get along with = llevarse bien."),
+        ("'If he ___ here, he would help.'", ["was", "were", "is"], 1, "Second: were."),
+        ("Pasiva: 'The book ___ by him.'", ["was written", "wrote", "was wrote"], 0, "Was + participio."),
+        ("'I'm looking forward ___ you.'", ["to see", "to seeing", "see"], 1, "Look forward to + -ing."),
+        ("Phrasal 'take off':", ["despegar", "ponerse", "llevar"], 0, "Take off = despegar."),
+        ("'The report ___ tomorrow.'", ["will be finished", "will finish", "is finish"], 0, "Pasiva futura."),
+        ("Relativo para cosas:", ["who", "which", "whom"], 1, "Which para cosas."),
+        ("'Despite ___ tired, he worked.'", ["being", "be", "was"], 0, "Despite + -ing."),
+        ("Phrasal 'come up with':", ["inventar", "subir", "venir"], 0, "Come up with = idear."),
+        ("'He asked me where I ___ from.'", ["came", "come", "was coming"], 1, "Reported: come (invariable)."),
+        ("Third conditional: 'If we ___ earlier, we would have caught it.'", ["had left", "left", "leave"], 0, "Past perfect."),
+        ("'The window was broken ___ the wind.'", ["by", "with", "from"], 0, "By + agente."),
+        ("Phrasal 'set up':", ["establecer", "sentar", "poner"], 0, "Set up = establecer/montar."),
+        ("'It's high time we ___ home.'", ["go", "went", "gone"], 1, "Subjuntivo pasado: went."),
+        ("Pasiva con 'can': 'This ___ done.'", ["can be", "can is", "can are"], 0, "Can + be + participio."),
+        ("'Whom' se usa para...", ["sujeto", "objeto", "posesión"], 1, "Whom = objeto."),
+        ("Phrasal 'break down':", ["romperse", "quebrar", "bajar"], 0, "Break down = averiarse."),
+        ("'I wish I ___ richer.'", ["was", "were", "am"], 1, "Wish + were."),
+        ("'The cake ___ by my mother.'", ["is made", "made", "is make"], 0, "Pasiva presente."),
+        ("Phrasal 'get over':", ["superar", "obtener", "llegar"], 0, "Get over = superar."),
+        ("'He is the man ___ won the prize.'", ["which", "who", "whose"], 1, "Who para personas."),
+        ("Cleft: 'It was in June ___ I met her.'", ["when", "that", "which"], 1, "Cleft con that."),
+        ("'The documents ___ yet.'", ["haven't signed", "haven't been signed", "weren't signed"], 1, "Pasiva perfecta."),
+        ("Phrasal 'look after':", ["cuidar", "buscar", "mirar"], 0, "Look after = cuidar."),
+        ("'If it ___ sunny, we would go.'", ["was", "were", "is"], 1, "Second: were."),
+        ("'The letter ___ by the postman.'", ["was delivered", "delivered", "was deliver"], 0, "Pasiva pasado."),
+        ("Phrasal 'put up with':", ["tolerar", "poner", "subir"], 0, "Put up with = tolerar."),
+        ("'She suggested that he ___ earlier.'", ["leaves", "left", "leave"], 1, "Subjuntivo: leave."),
+        ("Pasiva: 'English ___ in many countries.'", ["is spoken", "speaks", "is speak"], 0, "Inglés se habla."),
+        ("'I'd rather you ___ now.'", ["go", "went", "gone"], 1, "Would rather + pasado."),
+        ("Phrasal 'run into':", ["encontrarse con", "correr", "entrar"], 0, "Run into = encontrarse con."),
     ],
     "C1": [
         ("Inversión con 'never'", ["Never I saw", "Never have I seen", "Never I have seen"], 1, "Inversión: Never + aux + suj + verb."),
@@ -119,6 +181,36 @@ QUESTIONS_BANK = {
         ("'Piece of cake' significa...", ["algo difícil", "algo muy fácil", "un pastel"], 1, "Piece of cake = muy fácil."),
         ("Reported: 'I go' -> He said he ___", ["goes", "went", "go"], 1, "Presente -> pasado."),
         ("'Brush up on' se usa para...", ["refrescar conocimiento", "pintar", "olvidar"], 0, "Brush up on = refrescar."),
+        ("'Hardly ___ when it started raining.'", ["I arrived", "had I arrived", "I had arrived"], 1, "Inversión: Hardly + aux + suj."),
+        ("'Not until' invierte: 'Not until midnight ___.'", ["he arrived", "did he arrive", "he did arrive"], 1, "Inversión con not until."),
+        ("'Scarcely ___ the door when...'", ["I opened", "had I opened", "I had opened"], 1, "Scarcely + aux + suj."),
+        ("'It was the teacher ___ helped me.'", ["who", "which", "what"], 0, "Cleft con who."),
+        ("'Bring up' (un tema) significa...", ["mencionar", "subir", "traer"], 0, "Bring up = sacar a colación."),
+        ("'Get across' significa...", ["comunicar", "cruzar", "obtener"], 0, "Get across = hacer entender."),
+        ("Reported: 'I can' -> He said he ___", ["can", "could", "cans"], 1, "Can -> could."),
+        ("'On no account' invierte: 'On no account ___'", ["we complain", "do we complain", "we do complain"], 1, "Inversión: On no account + aux + suj."),
+        ("'It's high time' va con...", ["presente", "pasado", "futuro"], 1, "Subjuntivo pasado."),
+        ("'Put up with' significa...", ["tolerar", "poner", "subir"], 0, "Put up with = tolerar."),
+        ("'Were I you, I ___ go.'", ["will", "would", "shall"], 1, "Inversión condicional: would."),
+        ("'The more you read, ___ you know.'", ["the more", "more", "the most"], 0, "The + comparativo... the + comparativo."),
+        ("'Hardly ever' significa...", ["casi siempre", "casi nunca", "a veces"], 1, "Hardly ever = casi nunca."),
+        ("'Set out' significa...", ["salir", "poner", "establecer"], 0, "Set out = ponerse en marcha."),
+        ("Reported: 'must' -> He said he ___", ["must", "had to", "musted"], 1, "Must -> had to."),
+        ("'Little did he ___ about it.'", ["know", "knew", "known"], 0, "Little + aux + suj + verbo base."),
+        ("'Account for' significa...", ["explicar", "contar", "acunar"], 0, "Account for = explicar."),
+        ("'It was yesterday ___ I called.'", ["when", "that", "which"], 1, "Cleft con that."),
+        ("'Make up' (una historia) significa...", ["inventar", "maquillar", "hacer"], 0, "Make up = inventar."),
+        ("'Rarely' invierte: 'Rarely ___ he late.'", ["is", "was", "were"], 1, "Rarely + aux + suj."),
+        ("'By no means' invierte: 'By no means ___'", ["it is easy", "is it easy", "it easy is"], 1, "Inversión: By no means + aux + suj."),
+        ("Reported: 'these' -> He said ___", ["these", "those", "that"], 1, "These -> those."),
+        ("'Stand for' significa...", ["representar", "estar", "pararse"], 0, "Stand for = representar."),
+        ("'Only then' invierte: 'Only then ___'", ["I left", "did I leave", "I did leave"], 1, "Inversión: Only then + aux + suj."),
+        ("'Carry out' significa...", ["realizar", "llevar", "transportar"], 0, "Carry out = llevar a cabo."),
+        ("'He is said ___ a genius.'", ["to be", "be", "being"], 0, "He is said to be."),
+        ("'It was not until...' usa...", ["inversión", "presente", "ninguna"], 0, "Inversión tras not until."),
+        ("'Come into' significa...", ["heredar", "entrar", "venir"], 0, "Come into = heredar (dinero)."),
+        ("'Were they to ask, I ___ help.'", ["will", "would", "shan't"], 1, "Inversión were + suj + to."),
+        ("'Take on' significa...", ["asumir", "tomar", "llevar"], 0, "Take on = asumir (responsabilidad)."),
     ],
     "C2": [
         ("Conector formal", ["and then", "furthermore", "so"], 1, "Furthermore es formal."),
@@ -141,6 +233,36 @@ QUESTIONS_BANK = {
         ("'Admittedly' se usa para...", ["conceder un punto", "negar", "preguntar"], 0, "Admittedly = se admite."),
         ("Debate: 'One cannot overlook...' significa...", ["no se puede ignorar", "se puede ver", "olvidar"], 0, "Overlook = pasar por alto."),
         ("Registro de 'large' frente a 'substantial':", ["large es más formal", "son iguales", "substantial es más preciso"], 2, "Substantial aporta precisión/registro."),
+        ("'Notwithstanding' significa...", ["a pesar de", "debido a", "sin"], 0, "Notwithstanding = a pesar de."),
+        ("'Arguably' se usa para...", ["discutir un punto", "afirmar con matiz", "negar"], 1, "Arguably = se podría argumentar."),
+        ("'The former... the latter' se refiere a...", ["dos elementos", "tres", "uno"], 0, "Former/latter para dos."),
+        ("'Insofar as' significa...", ["en la medida en que", "aunque", "porque"], 0, "Insofar as = en la medida en que."),
+        ("'Per se' significa...", ["por sí mismo", "personalmente", "periódicamente"], 0, "Per se = por sí mismo."),
+        ("'To all intents and purposes' significa...", ["en efecto", "a propósito", "intencionalmente"], 0, "En efecto/prácticamente."),
+        ("'Mitigate' significa...", ["agravar", "mitigar", "mediar"], 1, "Mitigate = mitigar."),
+        ("'Aforementioned' se refiere a...", ["mencionado antes", "futuro", "desconocido"], 0, "Aforementioned = ya mencionado."),
+        ("'Nevertheless' es un conector de...", ["oposición", "adición", "causa"], 0, "Nevertheless = oposición."),
+        ("'Concur' significa...", ["discrepar", "coincidir", "correr"], 1, "Concur = coincidir."),
+        ("'To preclude' significa...", ["incluir", "excluir/impedir", "prever"], 1, "Preclude = impedir."),
+        ("'Albeit' + frase...", ["nominal/adj", "solo verbo", "solo sujeto"], 0, "Albeit + frase nominal/adjetivo."),
+        ("'Inherent' significa...", ["inerente", "heredado", "interno"], 0, "Inherent = inherente."),
+        ("'To underscore' significa...", ["subrayar/enfatizar", "restar", "bajar"], 0, "Underscore = subrayar."),
+        ("'Not least' significa...", ["no menos", "especialmente", "nada menos"], 1, "Not least = especialmente."),
+        ("'To posit' significa...", ["suponer", "poner", "posar"], 0, "Posit = postular."),
+        ("'Allegedly' se traduce como...", ["supuestamente", "indudablemente", "legalmente"], 0, "Allegedly = supuestamente."),
+        ("'To the extent that' significa...", ["en la medida en que", "aunque", "tanto que"], 0, "En la medida en que."),
+        ("'Pivotal' significa...", ["secundario", "pivotal/clave", "pasivo"], 1, "Pivotal = clave."),
+        ("'To delineate' significa...", ["borrar", "delinear/describir", "retirar"], 1, "Delineate = delinear."),
+        ("'By the same token' significa...", ["del mismo modo", "por el mismo token", "sin embargo"], 0, "Del mismo modo."),
+        ("'To obfuscate' significa...", ["aclarar", "confundir/oscurecer", "obstruir"], 1, "Obfuscate = ofuscar."),
+        ("'Salient' significa...", ["saliente/prominente", "saliendo", "salado"], 0, "Salient = prominente."),
+        ("'To extrapolate' significa...", ["interpolar", "extrapolar", "extraer"], 1, "Extrapolate = extrapolar."),
+        ("'Incontrovertible' significa...", ["discutible", "incuestionable", "controvertido"], 1, "Incontrovertible = incuestionable."),
+        ("'To eschew' significa...", ["evitar", "abrazar", "esconder"], 0, "Eschew = evitar."),
+        ("'Quintessential' significa...", ["cuestionable", "quintal", "quintasencial/arquetípico"], 2, "Quintessential = arquetípico."),
+        ("'To brook no delay' significa...", ["no tolerar", "gestionar", "buscar"], 0, "Brook = tolerar (negativo)."),
+        ("'Loathe' significa...", ["amar", "detestar", "flotar"], 1, "Loathe = detestar."),
+        ("'To gainsay' significa...", ["confirmar", "contradecir", "ganar"], 1, "Gainsay = contradecir."),
     ],
 }
 
@@ -152,24 +274,21 @@ def ensure_20_questions():
             level = db.scalar(select(Level).where(Level.code == code))
             if not level:
                 continue
+            total = len(bank)
+            k = total // 10  # cantidad de tests de 10
             tests = db.scalars(select(Test).where(Test.level_id == level.id)).all()
 
-            # Reusar un test existente como "Parte 1" (preserva resultados de usuarios)
-            # y crear "Parte 2". Así no borramos registros.
-            test1 = next((t for t in tests if "Parte 1" in t.title), None)
-            test2 = next((t for t in tests if "Parte 2" in t.title), None)
-            if test1 is None:
-                if tests:
-                    test1 = tests[0]
-                    test1.title = f"Test de Nivel {code} - Parte 1"
+            # Reusar tests existentes (conserva resultados) y crear los que falten
+            target_tests = []
+            for i in range(k):
+                if i < len(tests):
+                    t = tests[i]
+                    t.title = f"Test de Nivel {code} - Parte {i + 1}"
                 else:
-                    test1 = Test(level_id=level.id, title=f"Test de Nivel {code} - Parte 1")
-                    db.add(test1)
-                db.flush()
-            if test2 is None:
-                test2 = Test(level_id=level.id, title=f"Test de Nivel {code} - Parte 2")
-                db.add(test2)
-                db.flush()
+                    t = Test(level_id=level.id, title=f"Test de Nivel {code} - Parte {i + 1}")
+                    db.add(t)
+                target_tests.append(t)
+            db.flush()
 
             # Mapa prompt -> Question ya existente en este nivel
             existing = {}
@@ -178,11 +297,11 @@ def ensure_20_questions():
                     existing[q.prompt] = q
 
             for idx, (prompt, options, correct, explanation) in enumerate(bank):
-                target = test1 if idx < 10 else test2
+                target = target_tests[idx // 10]
                 if prompt in existing:
                     q = existing[prompt]
                     if q.test_id != target.id:
-                        q.test_id = target.id  # mover de test (no borra resultados)
+                        q.test_id = target.id  # mover (no borra resultados)
                 else:
                     q = Question(
                         test_id=target.id,
@@ -193,8 +312,16 @@ def ensure_20_questions():
                     )
                     db.add(q)
                     existing[prompt] = q
+
+            # Limpiar tests sobrantes sin preguntas ni resultados
+            for t in tests:
+                if t not in target_tests:
+                    has_q = db.scalar(select(func.count(Question.id)).where(Question.test_id == t.id))
+                    has_r = db.scalar(select(func.count(TestResult.id)).where(TestResult.test_id == t.id))
+                    if (has_q or 0) == 0 and (has_r or 0) == 0:
+                        db.delete(t)
         db.commit()
-        print("ensure_20_questions: 2 tests x 10 preguntas por nivel listos.")
+        print("ensure_20_questions: tests por nivel completados (20/30/40/50/50/50).")
     except Exception as e:
         db.rollback()
         print(f"AVISO ensure_20_questions: {e}")

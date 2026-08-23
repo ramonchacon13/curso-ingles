@@ -41,12 +41,14 @@ export default function Navbar() {
           {user?.is_premium && <Link to="/membresia" onClick={() => setOpen(false)}>Mi plan</Link>}
         </div>
         <div className="nav-user">
-          {user ? (
-            <>
-              <span className="user-name">{user.nombre}</span>
-              <button className="btn-ghost" onClick={handleLogout}>Salir</button>
-            </>
-          ) : (
+           {user ? (
+             <>
+               <span className="user-name">{user.nombre}</span>
+               {user.role === 'admin' && <span className="role-badge admin">Admin</span>}
+               {user.role === 'moderator' && <span className="role-badge moderator">Mod</span>}
+               <button className="btn-ghost" onClick={handleLogout}>Salir</button>
+             </>
+           ) : (
             <>
               <Link to="/login" className="btn-ghost" onClick={() => setOpen(false)}>Entrar</Link>
               <Link to="/register" className="btn-primary" onClick={() => setOpen(false)}>Regístrate</Link>

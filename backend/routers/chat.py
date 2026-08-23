@@ -1,14 +1,17 @@
 import json
 import asyncio
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from database import SessionLocal
 from models import User, ChatMessage
 import auth_utils
+from auth_deps import get_current_user
 
 router = APIRouter(tags=["chat"])
+
+MODERATOR_ROLES = ("admin", "moderator")
 
 
 class Conn:
@@ -66,7 +69,10 @@ async def chat_ws(websocket: WebSocket):
     for m in history:
         await websocket.send_text(json.dumps({
             "type": "msg",
+            "id": m.id,
+            "user_id": m.user_id,
             "user": m.sender_name,
+            "role": m.role,
             "content": m.content,
             "time": m.created_at.isoformat(),
         }))
@@ -92,18 +98,42 @@ async def chat_ws(websocket: WebSocket):
             cm = ChatMessage(
                 user_id=user.id,
                 sender_name=user.nombre,
-                role="user",
+                role=user.role or "user",
                 content=text,
             )
             db.add(cm)
             db.commit()
+            db.refresh(cm)
             db.close()
             await broadcast({
                 "type": "msg",
+                "id": cm.id,
+                "user_id": user.id,
                 "user": user.nombre,
+                "role": cm.role,
                 "content": text,
             })
     except WebSocketDisconnect:
         if conn in connections:
             connections.remove(conn)
         await broadcast_online()
+
+
+@router.delete("/api/chat/messages/{message_id}")
+async def delete_message(
+    message_id: int,
+    current: User = Depends(get_current_user),
+):
+    if current.role not in MODERATOR_ROLES:
+        raise HTTPException(status_code=403, detail="No tienes permiso para eliminar mensajes")
+    db = SessionLocal()
+    try:
+        msg = db.get(ChatMessage, message_id)
+        if not msg:
+            raise HTTPException(status_code=404, detail="Mensaje no encontrado")
+        db.delete(msg)
+        db.commit()
+    finally:
+        db.close()
+    await broadcast({"type": "delete", "id": message_id})
+    return {"ok": True}

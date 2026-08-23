@@ -356,3 +356,20 @@ input, select, textarea, button { max-width: 100%; }
   .btn-primary, .btn-secondary, .btn-ghost { font-size: 14px; padding: 10px 18px; }
   .level-badge { font-size: 14px; padding: 6px 14px; }
 }
+
+/* ===== CHAT: NORMAS Y MODERACIÓN ===== */
+.rules-panel { background: #fff; border: 1px solid var(--borde); border-radius: 14px; margin: 14px 0 16px; overflow: hidden; }
+.rules-head { width: 100%; display: flex; align-items: center; gap: 8px; background: #f3f6ff; border: none; padding: 12px 16px; cursor: pointer; font-size: 15px; color: var(--texto); }
+.rules-head .rules-toggle { margin-left: auto; font-size: 13px; color: var(--primario); font-weight: 600; }
+.rules-list { margin: 0; padding: 10px 18px 16px 34px; }
+.rules-list li { margin: 6px 0; font-size: 14px; color: #444; }
+
+.mod-flag { display: inline-flex; align-items: center; gap: 5px; margin-left: 10px; font-size: 12px; font-weight: 700; color: #8a5a00; background: #fff3d6; border: 1px solid #ffd98a; padding: 3px 9px; border-radius: 999px; }
+
+.role-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; padding: 2px 7px; border-radius: 999px; margin-left: 6px; }
+.role-badge.admin { background: #e7ddff; color: #5b2bd6; border: 1px solid #cbb6ff; }
+.role-badge.moderator { background: #d9f3ff; color: #1366b0; border: 1px solid #a9dcff; }
+
+.bubble-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; flex-wrap: wrap; }
+.bubble-del { margin-left: auto; background: transparent; border: none; color: #c0392b; cursor: pointer; padding: 2px 4px; border-radius: 6px; display: inline-flex; }
+.bubble-del:hover { background: #fdecea; }

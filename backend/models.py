@@ -22,6 +22,7 @@ class User(Base):
     nivel = Column(String(8), default="A1")
     is_premium = Column(Boolean, default=False)
     plan = Column(String(20), default="free")
+    role = Column(String(20), default="user")
     created_at = Column(DateTime, default=utcnow)
 
     messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")

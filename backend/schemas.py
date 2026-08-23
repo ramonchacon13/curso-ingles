@@ -20,6 +20,7 @@ class UserOut(BaseModel):
     nivel: str
     is_premium: bool
     plan: str
+    role: str = "user"
 
     class Config:
         from_attributes = True

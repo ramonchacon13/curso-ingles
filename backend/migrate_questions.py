@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from database import SessionLocal, engine, Base
 import models
 from models import Level, Test, Question, TestResult
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 
 
 # Objetivo por nivel (múltiplo de 10; se reparte en tests de 10).
@@ -270,15 +270,30 @@ QUESTIONS_BANK = {
 def ensure_20_questions():
     db = SessionLocal()
     try:
+        # Lock advisory (Postgres) para evitar ejecuciones concurrentes que duplicarían preguntas
+        if engine.dialect.name == "postgresql":
+            db.execute(text("SELECT pg_advisory_xact_lock(912837)"))
+
         for code, bank in QUESTIONS_BANK.items():
             level = db.scalar(select(Level).where(Level.code == code))
             if not level:
                 continue
-            total = len(bank)
-            k = total // 10  # cantidad de tests de 10
             tests = db.scalars(select(Test).where(Test.level_id == level.id)).all()
 
-            # Reusar tests existentes (conserva resultados) y crear los que falten
+            # 1) Eliminar preguntas duplicadas dentro del nivel (mantiene una por prompt)
+            level_qs = []
+            for t in tests:
+                level_qs += db.scalars(select(Question).where(Question.test_id == t.id)).all()
+            seen = set()
+            for q in level_qs:
+                if q.prompt in seen:
+                    db.delete(q)
+                else:
+                    seen.add(q.prompt)
+            db.flush()
+
+            total = len(bank)
+            k = total // 10  # cantidad de tests de 10
             target_tests = []
             for i in range(k):
                 if i < len(tests):
@@ -290,7 +305,7 @@ def ensure_20_questions():
                 target_tests.append(t)
             db.flush()
 
-            # Mapa prompt -> Question ya existente en este nivel
+            # Mapa prompt -> Question ya existente en este nivel (sin duplicados)
             existing = {}
             for t in tests:
                 for q in db.scalars(select(Question).where(Question.test_id == t.id)).all():
@@ -321,7 +336,7 @@ def ensure_20_questions():
                     if (has_q or 0) == 0 and (has_r or 0) == 0:
                         db.delete(t)
         db.commit()
-        print("ensure_20_questions: tests por nivel completados (20/30/40/50/50/50).")
+        print("ensure_20_questions: preguntas verificadas/completadas (20/30/40/50/50/50, sin duplicados).")
     except Exception as e:
         db.rollback()
         print(f"AVISO ensure_20_questions: {e}")

@@ -54,10 +54,3 @@ def _seed_if_empty():
 
 import threading
 threading.Thread(target=_seed_if_empty, daemon=True).start()
-
-# Completa de inmediato si la BD ya tiene datos (idempotente, solo agrega)
-try:
-    from migrate_questions import ensure_20_questions
-    ensure_20_questions()
-except Exception as e:
-    print(f"AVISO ensure_20_questions inmediato: {e}")

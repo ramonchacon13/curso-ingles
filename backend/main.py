@@ -45,9 +45,19 @@ def _seed_if_empty():
                 print("BD vacía: sembrando contenido inicial...")
                 subprocess.run([sys.executable, "seed_content.py"], check=True)
                 print("Seed completado.")
+        # Asegura 20 preguntas por nivel (solo agrega, no borra registros)
+        from migrate_questions import ensure_20_questions
+        ensure_20_questions()
     except Exception as e:
-        print(f"AVISO: no se pudo sembrar en este arranque ({e}).")
+        print(f"AVISO: no se pudo sembrar/completar en este arranque ({e}).")
 
 
 import threading
 threading.Thread(target=_seed_if_empty, daemon=True).start()
+
+# Completa de inmediato si la BD ya tiene datos (idempotente, solo agrega)
+try:
+    from migrate_questions import ensure_20_questions
+    ensure_20_questions()
+except Exception as e:
+    print(f"AVISO ensure_20_questions inmediato: {e}")

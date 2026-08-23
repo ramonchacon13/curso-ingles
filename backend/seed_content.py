@@ -185,3 +185,10 @@ for code, questions in tests_data.items():
 db.commit()
 print("Contenido ampliado cargado: 6 niveles, más lecciones por curso y tests por nivel.")
 db.close()
+
+# Completa a 20 preguntas por nivel (idempotente, solo agrega)
+try:
+    import migrate_questions
+    migrate_questions.ensure_20_questions()
+except Exception as e:
+    print(f"AVISO al completar preguntas: {e}")

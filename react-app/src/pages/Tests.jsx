@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api.js'
 
 export default function Tests() {
-  const { refresh } = useAuth()
+  const { refresh, user } = useAuth()
   const [niveles, setNiveles] = useState([])
   const [selected, setSelected] = useState(null)
   const [tests, setTests] = useState([])
@@ -14,7 +14,11 @@ export default function Tests() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/niveles').then((d) => { setNiveles(d); setLoading(false) }).catch(() => setLoading(false))
+    api.get('/niveles').then((d) => {
+      setNiveles(d); setLoading(false)
+      const code = (user && user.nivel) || d[0]?.code
+      if (code) loadTests(code)
+    }).catch(() => setLoading(false))
   }, [])
 
   const loadTests = async (code) => {
@@ -77,7 +81,7 @@ export default function Tests() {
           <h2>{active.title}</h2>
           {active.questions.map((q, i) => (
             <div key={q.id} className="question">
-              <p><strong>{i + 1}.</strong> {q.prompt}</p>
+              <p className="question-prompt"><span className="q-number">{i + 1}</span> {q.prompt}</p>
               {q.options.map((opt, oi) => (
                 <label key={oi} className="option">
                   <input

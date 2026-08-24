@@ -19,3 +19,12 @@ APP_NAME = "CursoIngles API"
 # Se aplican al arranque. Para añadir moderadores, asígnales el rol manualmente
 # desde el panel/admin o vía BD; el sistema ya soporta múltiples moderadores.
 ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "")
+
+# URLs públicas del sitio (para redirecciones OAuth y correos)
+API_BASE_URL = os.getenv("API_BASE_URL", "")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "")
+
+# Google OAuth
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+SESSION_SECRET = os.getenv("SESSION_SECRET", JWT_SECRET)

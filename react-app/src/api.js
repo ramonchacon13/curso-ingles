@@ -20,7 +20,7 @@ export function getStoredUser() {
   return raw ? JSON.parse(raw) : null
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://curso-ingles-api.onrender.com'
+export const API_BASE = import.meta.env.VITE_API_URL || 'https://curso-ingles-api.onrender.com'
 
 async function request(method, path, body) {
   const headers = { 'Content-Type': 'application/json' }

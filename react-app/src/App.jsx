@@ -4,6 +4,7 @@ import Navbar from './components/Navbar.jsx'
 import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
+import OAuthCallback from './pages/OAuthCallback.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Courses from './pages/Courses.jsx'
 import Lesson from './pages/Lesson.jsx'
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
           <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="/dashboard" element={<Private><Dashboard /></Private>} />
           <Route path="/cursos" element={<Private><Courses /></Private>} />
           <Route path="/lecciones/:id" element={<Private><Lesson /></Private>} />

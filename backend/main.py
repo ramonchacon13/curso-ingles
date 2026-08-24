@@ -41,22 +41,20 @@ except Exception as e:
 
 def _patch_schema():
     from database import SessionLocal
-    from sqlalchemy import select, text
+    from sqlalchemy import inspect, text, select
     import models
     from config import ADMIN_EMAILS
     db = SessionLocal()
     try:
-        # Añade columna role si no existe (idempotente y seguro en sqlite/postgres)
-        try:
+        existing = {c["name"] for c in inspect(db.bind).get_columns("usuarios")}
+        if "role" not in existing:
             db.execute(text("ALTER TABLE usuarios ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'"))
             db.commit()
-        except Exception:
-            db.rollback()
-        try:
+            print("patch: columna 'role' agregada")
+        if "email_opt_in" not in existing:
             db.execute(text("ALTER TABLE usuarios ADD COLUMN email_opt_in BOOLEAN NOT NULL DEFAULT 1"))
             db.commit()
-        except Exception:
-            db.rollback()
+            print("patch: columna 'email_opt_in' agregada")
         # Asigna rol admin a los correos configurados en ADMIN_EMAILS
         emails = [e.strip().lower() for e in (ADMIN_EMAILS or "").split(",") if e.strip()]
         if emails:
@@ -64,9 +62,13 @@ def _patch_schema():
             for u in users:
                 u.role = "admin"
             db.commit()
-            print(f"Admin(s) configurado(s): {[u.email for u in users]}")
+            if users:
+                print(f"Admin(s) configurado(s): {[u.email for u in users]}")
     except Exception as e:
+        db.rollback()
+        import traceback
         print(f"AVISO _patch_schema: {e}")
+        traceback.print_exc()
     finally:
         db.close()
 

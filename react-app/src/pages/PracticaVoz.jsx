@@ -54,7 +54,7 @@ function tierMessage(score) {
   return { text: '¡Lo intentaste! Vuelve a probar 💡', cls: 'soft' }
 }
 
-export default function pickBestVoice(vs) {
+function pickBestVoice(vs) {
   const prefs = ['aria', 'samantha', 'natural', 'online', 'google us english', 'zira', 'david', 'daniel', 'neural']
   for (const p of prefs) {
     const found = vs.find((v) => v.name.toLowerCase().includes(p))
@@ -63,7 +63,7 @@ export default function pickBestVoice(vs) {
   return vs[0]
 }
 
-function PracticaVoz() {
+export default function PracticaVoz() {
   const { user } = useAuth()
   const isPremium = user?.is_premium || user?.role === 'admin' || user?.role === 'moderator'
 

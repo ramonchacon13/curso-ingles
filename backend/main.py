@@ -45,7 +45,7 @@ def fixschema():
         out["columns_before"] = cols
         for col, ddl in [
             ("role", "ALTER TABLE usuarios ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'"),
-            ("email_opt_in", "ALTER TABLE usuarios ADD COLUMN email_opt_in BOOLEAN NOT NULL DEFAULT 1"),
+            ("email_opt_in", "ALTER TABLE usuarios ADD COLUMN email_opt_in BOOLEAN NOT NULL DEFAULT true"),
         ]:
             if col not in cols:
                 try:
@@ -81,7 +81,7 @@ def _patch_schema():
             db.commit()
             print("patch: columna 'role' agregada")
         if "email_opt_in" not in existing:
-            db.execute(text("ALTER TABLE usuarios ADD COLUMN email_opt_in BOOLEAN NOT NULL DEFAULT 1"))
+            db.execute(text("ALTER TABLE usuarios ADD COLUMN email_opt_in BOOLEAN NOT NULL DEFAULT true"))
             db.commit()
             print("patch: columna 'email_opt_in' agregada")
         # Asigna rol admin a los correos configurados en ADMIN_EMAILS

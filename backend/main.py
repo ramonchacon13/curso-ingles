@@ -33,35 +33,6 @@ def health():
     return {"status": "ok", "app": "CursoIngles"}
 
 
-@app.get("/api/debug/fixschema")
-def fixschema():
-    from sqlalchemy import inspect
-    from database import SessionLocal
-    from sqlalchemy import text
-    db = SessionLocal()
-    out = {}
-    try:
-        cols = [c["name"] for c in inspect(db.bind).get_columns("usuarios")]
-        out["columns_before"] = cols
-        for col, ddl in [
-            ("role", "ALTER TABLE usuarios ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'"),
-            ("email_opt_in", "ALTER TABLE usuarios ADD COLUMN email_opt_in BOOLEAN NOT NULL DEFAULT true"),
-        ]:
-            if col not in cols:
-                try:
-                    db.execute(text(ddl))
-                    db.commit()
-                    out[f"add_{col}"] = "ok"
-                except Exception as e:
-                    out[f"add_{col}_error"] = str(e)
-        out["columns_after"] = [c["name"] for c in inspect(db.bind).get_columns("usuarios")]
-    except Exception as e:
-        out["error"] = str(e)
-    finally:
-        db.close()
-    return out
-
-
 try:
     Base.metadata.create_all(bind=engine)
 except Exception as e:

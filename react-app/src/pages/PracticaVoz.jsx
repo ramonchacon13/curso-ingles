@@ -90,7 +90,12 @@ export default function PracticaVoz() {
     rec.onresult = (e) => {
       const transcript = e.results[0][0].transcript.trim()
       setListening(false)
-      if (!transcript) return
+      if (!transcript) {
+        if (mode === 'chat') {
+          setMessages((m) => [...m, { role: 'assistant', content: 'No te entendí bien, ¿puedes repetir? 💡' }])
+        }
+        return
+      }
       if (mode === 'repeat') {
         const r = scoreAttempt(TARGET_PHRASES[phraseIdx].en, transcript)
         setResult(r)
@@ -99,7 +104,12 @@ export default function PracticaVoz() {
         send(transcript)
       }
     }
-    rec.onerror = () => setListening(false)
+    rec.onerror = (e) => {
+      setListening(false)
+      if (e.error === 'no-speech' && mode === 'chat') {
+        setMessages((m) => [...m, { role: 'assistant', content: 'No te entendí bien, ¿puedes repetir? 💡' }])
+      }
+    }
     rec.onend = () => setListening(false)
     recRef.current = rec
     // eslint-disable-next-line react-hooks/exhaustive-deps

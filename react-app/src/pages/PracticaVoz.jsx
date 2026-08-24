@@ -54,7 +54,16 @@ function tierMessage(score) {
   return { text: '¡Lo intentaste! Vuelve a probar 💡', cls: 'soft' }
 }
 
-export default function PracticaVoz() {
+export default function pickBestVoice(vs) {
+  const prefs = ['natural', 'neural', 'online', 'aria', 'samantha', 'google us english', 'zira', 'david', 'daniel']
+  for (const p of prefs) {
+    const found = vs.find((v) => v.name.toLowerCase().includes(p))
+    if (found) return found
+  }
+  return vs[0]
+}
+
+function PracticaVoz() {
   const { user } = useAuth()
   const isPremium = user?.is_premium || user?.role === 'admin' || user?.role === 'moderator'
 
@@ -67,6 +76,20 @@ export default function PracticaVoz() {
   const [textMode, setTextMode] = useState(false)
   const [text, setText] = useState('')
   const [supported, setSupported] = useState(true)
+  const [voices, setVoices] = useState([])
+  const [voiceURI, setVoiceURI] = useState('')
+
+  useEffect(() => {
+    const loadVoices = () => {
+      const vs = window.speechSynthesis.getVoices().filter((v) => v.lang && v.lang.toLowerCase().startsWith('en'))
+      setVoices(vs)
+      if (!voiceURI && vs.length) setVoiceURI(pickBestVoice(vs).voiceURI)
+    }
+    loadVoices()
+    window.speechSynthesis.onvoiceschanged = loadVoices
+    return () => { window.speechSynthesis.onvoiceschanged = null }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [phraseIdx, setPhraseIdx] = useState(0)
   const [result, setResult] = useState(null) // {score, segs}
@@ -124,7 +147,10 @@ export default function PracticaVoz() {
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(txt)
     u.lang = 'en-US'
-    u.rate = 0.95
+    u.rate = 0.92
+    u.pitch = 1
+    const v = voices.find((x) => x.voiceURI === voiceURI) || (voices.length ? pickBestVoice(voices) : null)
+    if (v) u.voice = v
     window.speechSynthesis.speak(u)
   }
 
@@ -182,6 +208,16 @@ export default function PracticaVoz() {
   return (
     <div className="voice-page">
       <h1><Icon name="chat" size={26} /> Practica tu voz 🎙️</h1>
+      {voices.length > 0 && (
+        <div className="voice-select">
+          <label htmlFor="voice">Voz:</label>
+          <select id="voice" value={voiceURI} onChange={(e) => setVoiceURI(e.target.value)}>
+            {voices.map((v) => (
+              <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="mode-tabs">
         <button className={mode === 'chat' ? 'on' : ''} onClick={() => setMode('chat')}>💬 Conversar</button>

@@ -21,6 +21,7 @@ class UserOut(BaseModel):
     is_premium: bool
     plan: str
     role: str = "user"
+    email_opt_in: bool = True
 
     class Config:
         from_attributes = True

@@ -27,6 +27,11 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+    try:
+        from mail import send_welcome
+        send_welcome(user.email, user.nombre)
+    except Exception as e:
+        print(f"AVISO: no se envió correo de bienvenida: {e}")
     return user
 
 

@@ -13,6 +13,7 @@ export default function Perfil() {
   const [nueva, setNueva] = useState('')
   const [repetir, setRepetir] = useState('')
   const [progreso, setProgreso] = useState(null)
+  const [optIn, setOptIn] = useState(user?.email_opt_in ?? true)
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
 
@@ -24,7 +25,7 @@ export default function Perfil() {
     e.preventDefault()
     setMsg(''); setErr('')
     try {
-      await userApi.updatePerfil({ nombre, email: undefined })
+      await userApi.updatePerfil({ nombre, email_opt_in: optIn })
       await refresh()
       setMsg('Perfil actualizado.')
     } catch (e2) {
@@ -75,6 +76,15 @@ export default function Perfil() {
           </label>
           <button className="btn-primary" type="submit">Guardar nombre</button>
         </form>
+      </section>
+
+      <section className="card">
+        <h2>Correos</h2>
+        <p className="muted">Te enviaremos solo lo importante. Marca esta opción para recibir un resumen semanal de tu progreso.</p>
+        <label className="checkbox-row">
+          <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} />
+          Quiero recibir un resumen semanal por correo
+        </label>
       </section>
 
       <section className="card">

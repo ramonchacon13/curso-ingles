@@ -20,6 +20,7 @@ class NivelUpdate(BaseModel):
 class PerfilUpdate(BaseModel):
     nombre: str | None = None
     email: str | None = None
+    email_opt_in: bool | None = None
 
 
 class PasswordUpdate(BaseModel):
@@ -42,8 +43,10 @@ def update_perfil(
             if existe:
                 raise HTTPException(status_code=400, detail="El correo ya está registrado")
             current.email = nuevo
+    if data.email_opt_in is not None:
+        current.email_opt_in = bool(data.email_opt_in)
     db.commit()
-    return {"ok": True, "nombre": current.nombre, "email": current.email}
+    return {"ok": True, "nombre": current.nombre, "email": current.email, "email_opt_in": current.email_opt_in}
 
 
 @router.put("/me/password", response_model=dict)

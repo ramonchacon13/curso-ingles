@@ -48,6 +48,11 @@ def _patch_schema():
             db.commit()
         except Exception:
             db.rollback()
+        try:
+            db.execute(text("ALTER TABLE usuarios ADD COLUMN email_opt_in BOOLEAN NOT NULL DEFAULT 1"))
+            db.commit()
+        except Exception:
+            db.rollback()
         # Asigna rol admin a los correos configurados en ADMIN_EMAILS
         emails = [e.strip().lower() for e in (ADMIN_EMAILS or "").split(",") if e.strip()]
         if emails:

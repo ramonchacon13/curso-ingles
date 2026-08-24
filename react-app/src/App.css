@@ -423,6 +423,9 @@ input, select, textarea, button { max-width: 100%; }
   .target-phrase { font-size: 20px; }
   .mode-tabs { flex-direction: column; }
 }
+
+.checkbox-row { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--texto); cursor: pointer; margin-top: 4px; }
+.checkbox-row input { width: 18px; height: 18px; accent-color: var(--primario); }
 .voice-lock { max-width: 460px; margin: 40px auto; text-align: center; background: #fff; border: 1px solid var(--borde); border-radius: 20px; padding: 36px 26px; box-shadow: 0 8px 30px rgba(0,0,0,.06); }
 .voice-lock .btn-primary { display: inline-block; margin-top: 16px; text-decoration: none; }
 .voice-lock p { color: #5a6472; margin: 14px 0; }

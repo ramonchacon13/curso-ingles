@@ -23,6 +23,7 @@ class User(Base):
     is_premium = Column(Boolean, default=False)
     plan = Column(String(20), default="free")
     role = Column(String(20), default="user")
+    email_opt_in = Column(Boolean, default=True)
     created_at = Column(DateTime, default=utcnow)
 
     messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")

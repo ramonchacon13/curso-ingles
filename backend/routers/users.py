@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from database import get_db
-from models import User, Progreso, Lesson, Level, Course
+from models import User, Progreso, Lesson, Level, Course, PrivateMessage, ChatMessage, TestResult
 from auth_deps import get_current_user
 from auth_utils import hash_password, verify_password
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 
 router = APIRouter(prefix="/api", tags=["usuarios"])
 
@@ -158,3 +158,55 @@ def listar_usuarios(
 ):
     users = db.scalars(select(User).where(User.id != current.id)).all()
     return [{"id": u.id, "nombre": u.nombre} for u in users]
+
+
+@router.get("/usuarios/buscar", response_model=list[dict])
+def buscar_usuarios(
+    q: str = "",
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    if not q or not q.strip():
+        return []
+    like = f"%{q.strip().lower()}%"
+    users = db.scalars(
+        select(User)
+        .where(User.id != current.id)
+        .where((func.lower(User.nombre).like(like)) | (func.lower(User.email).like(like)))
+        .limit(20)
+    ).all()
+    return [{"id": u.id, "nombre": u.nombre} for u in users]
+
+
+@router.get("/usuarios/{user_id}", response_model=dict)
+def obtener_usuario(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    u = db.get(User, user_id)
+    if not u or u.id == current.id:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return {"id": u.id, "nombre": u.nombre, "email": u.email, "role": u.role}
+
+
+@router.delete("/usuarios/{user_id}", response_model=dict)
+def eliminar_usuario(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    if current.role != "admin":
+        raise HTTPException(status_code=403, detail="Solo un administrador puede eliminar usuarios")
+    if user_id == current.id:
+        raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta")
+    u = db.get(User, user_id)
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    db.execute(delete(PrivateMessage).where((PrivateMessage.user_id == user_id) | (PrivateMessage.peer_id == user_id)))
+    db.execute(delete(Progreso).where(Progreso.user_id == user_id))
+    db.execute(delete(ChatMessage).where(ChatMessage.user_id == user_id))
+    db.execute(delete(TestResult).where(TestResult.user_id == user_id))
+    db.delete(u)
+    db.commit()
+    return {"ok": True, "eliminado": user_id}

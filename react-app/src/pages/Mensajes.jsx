@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { getToken, api } from '../api.js'
 import Icon from '../components/Icon.jsx'
@@ -13,7 +14,12 @@ function nowTime() {
 
 export default function Mensajes() {
   const { user } = useAuth()
-  const [contacts, setContacts] = useState([])
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [recent, setRecent] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pm_recent') || '[]') } catch { return [] }
+  })
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
   const [peer, setPeer] = useState(null)
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -21,10 +27,43 @@ export default function Mensajes() {
   const [peerOnline, setPeerOnline] = useState(false)
   const wsRef = useRef(null)
   const endRef = useRef(null)
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
-    api.get('/usuarios').then(setContacts).catch(() => {})
+    const pid = searchParams.get('peer')
+    if (pid && !peer) {
+      api.get(`/usuarios/${pid}`).then((r) => {
+        const u = r.data
+        setPeer({ id: u.id, nombre: u.nombre })
+        addRecent({ id: u.id, nombre: u.nombre })
+      }).catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const addRecent = (c) => {
+    setRecent((prev) => {
+      const next = [c, ...prev.filter((x) => x.id !== c.id)].slice(0, 12)
+      try { localStorage.setItem('pm_recent', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); return }
+    const t = setTimeout(() => {
+      api.get('/usuarios/buscar', { params: { q: query.trim() } })
+        .then((r) => setResults(r.data))
+        .catch(() => setResults([]))
+    }, 300)
+    return () => clearTimeout(t)
+  }, [query])
+
+  const selectPeer = (c) => {
+    setPeer(c)
+    addRecent(c)
+    setSearchParams({})
+  }
 
   useEffect(() => {
     if (!peer) return
@@ -76,33 +115,67 @@ export default function Mensajes() {
     setInput('')
   }
 
+  const deleteUser = async () => {
+    if (!peer) return
+    if (!window.confirm(`¿Eliminar a ${peer.nombre} y todos sus datos de forma permanente?`)) return
+    try {
+      await api.delete(`/usuarios/${peer.id}`)
+      const next = recent.filter((x) => x.id !== peer.id)
+      setRecent(next)
+      try { localStorage.setItem('pm_recent', JSON.stringify(next)) } catch {}
+      setPeer(null)
+    } catch (e) {
+      window.alert(e?.response?.data?.detail || 'No se pudo eliminar el usuario')
+    }
+  }
+
   return (
     <div className="mensajes">
       <h1 className="mensajes-title">Mensajes privados</h1>
       <div className="msg-layout">
         <aside className="msg-sidebar">
-          <div className="msg-sidebar-head">Personas</div>
-          {contacts.length === 0 && <p className="muted" style={{ padding: '12px' }}>No hay otros usuarios todavía.</p>}
+          <div className="msg-sidebar-head">Conversar</div>
+          <input
+            className="msg-search"
+            placeholder="Buscar usuario por nombre o correo…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
           <div className="msg-contacts">
-            {contacts.map((c) => (
-              <button
-                key={c.id}
-                className={`contact ${peer?.id === c.id ? 'active' : ''}`}
-                onClick={() => setPeer(c)}
-              >
-                <span className="avatar">{initials(c.nombre)}</span>
-                <span className="contact-name">{c.nombre}</span>
-              </button>
-            ))}
+            {query.trim() ? (
+              results.length === 0 ? (
+                <p className="muted" style={{ padding: '12px' }}>Sin coincidencias.</p>
+              ) : (
+                results.map((c) => (
+                  <button key={c.id} className="contact" onClick={() => selectPeer(c)}>
+                    <span className="avatar">{initials(c.nombre)}</span>
+                    <span className="contact-name">{c.nombre}</span>
+                  </button>
+                ))
+              )
+            ) : recent.length === 0 ? (
+              <p className="muted" style={{ padding: '12px' }}>Busca un usuario para iniciar un chat privado.</p>
+            ) : (
+              recent.map((c) => (
+                <button
+                  key={c.id}
+                  className={`contact ${peer?.id === c.id ? 'active' : ''}`}
+                  onClick={() => selectPeer(c)}
+                >
+                  <span className="avatar">{initials(c.nombre)}</span>
+                  <span className="contact-name">{c.nombre}</span>
+                </button>
+              ))
+            )}
           </div>
         </aside>
 
         <section className="msg-chat">
           {!peer ? (
-              <div className="msg-empty">
-                <div className="msg-empty-icon"><Icon name="chat" size={42} /></div>
-                <p>Selecciona una persona de la lista para iniciar un chat privado.</p>
-              </div>
+            <div className="msg-empty">
+              <div className="msg-empty-icon"><Icon name="chat" size={42} /></div>
+              <p>Busca un usuario en la barra lateral para iniciar un chat privado.</p>
+            </div>
           ) : (
             <>
               <div className="msg-header">
@@ -111,6 +184,11 @@ export default function Mensajes() {
                   <strong>{peer.nombre}</strong>
                   <small>{peerOnline ? 'En línea' : 'Desconectado'}</small>
                 </div>
+                {isAdmin && peer.id !== user.id && (
+                  <button className="msg-del-user" title="Eliminar usuario" onClick={deleteUser}>
+                    <Icon name="trash" size={16} />
+                  </button>
+                )}
                 {!connected && <span className="msg-status">conectando…</span>}
               </div>
 

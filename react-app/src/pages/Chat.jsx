@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { getToken } from '../api.js'
 import { chatApi } from '../api.js'
@@ -20,6 +21,7 @@ const COMMUNITY_RULES = [
 
 export default function Chat() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const isMod = user?.role === 'admin' || user?.role === 'moderator'
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -128,7 +130,17 @@ export default function Chat() {
           return (
             <div key={m.id} className={`bubble ${m.mine ? 'user' : 'assistant'}`}>
               <div className="bubble-head">
-                <strong>{m.user}</strong>
+                {m.user_id && m.user_id !== user?.id ? (
+                  <button
+                    className="bubble-user"
+                    title="Enviar mensaje privado"
+                    onClick={() => navigate(`/mensajes?peer=${m.user_id}`)}
+                  >
+                    <strong>{m.user}</strong>
+                  </button>
+                ) : (
+                  <strong>{m.user}</strong>
+                )}
                 {label && <span className={`role-badge ${m.role}`}>{label}</span>}
                 <span className="bubble-time">{m.time}</span>
                 {isMod && (

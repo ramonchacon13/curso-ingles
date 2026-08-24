@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
-import { aiApi } from '../api.js'
+import { aiApi, API_BASE } from '../api.js'
 import Icon from '../components/Icon.jsx'
 
 const SUGGESTIONS = [
@@ -55,7 +55,7 @@ function tierMessage(score) {
 }
 
 export default function pickBestVoice(vs) {
-  const prefs = ['natural', 'neural', 'online', 'aria', 'samantha', 'google us english', 'zira', 'david', 'daniel']
+  const prefs = ['aria', 'samantha', 'natural', 'online', 'google us english', 'zira', 'david', 'daniel', 'neural']
   for (const p of prefs) {
     const found = vs.find((v) => v.name.toLowerCase().includes(p))
     if (found) return found
@@ -80,14 +80,17 @@ function PracticaVoz() {
   const [voiceURI, setVoiceURI] = useState('')
 
   useEffect(() => {
-    const loadVoices = () => {
-      const vs = window.speechSynthesis.getVoices().filter((v) => v.lang && v.lang.toLowerCase().startsWith('en'))
-      setVoices(vs)
-      if (!voiceURI && vs.length) setVoiceURI(pickBestVoice(vs).voiceURI)
-    }
-    loadVoices()
-    window.speechSynthesis.onvoiceschanged = loadVoices
-    return () => { window.speechSynthesis.onvoiceschanged = null }
+    let cancelled = false
+    fetch(`${API_BASE}/api/voice/voices`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((vs) => {
+        if (cancelled) return
+        const en = Array.isArray(vs) ? vs.filter((v) => v.locale && v.locale.toLowerCase().startsWith('en')) : []
+        setVoices(en)
+        if (en.length && !voiceURI) setVoiceURI(pickBestVoice(en).name)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -142,16 +145,38 @@ function PracticaVoz() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, thinking])
 
-  const speak = (txt) => {
-    if (!('speechSynthesis' in window)) return
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(txt)
-    u.lang = 'en-US'
-    u.rate = 0.92
-    u.pitch = 1
-    const v = voices.find((x) => x.voiceURI === voiceURI) || (voices.length ? pickBestVoice(voices) : null)
-    if (v) u.voice = v
-    window.speechSynthesis.speak(u)
+  const audioRef = useRef(null)
+  const speak = async (txt) => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
+    try {
+      const res = await fetch(`${API_BASE}/api/voice/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: txt, voice: voiceURI || 'en-US-AriaNeural' }),
+      })
+      if (!res.ok) throw new Error('tts')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = new Audio(url)
+      audioRef.current = a
+      a.onended = () => { URL.revokeObjectURL(url); audioRef.current = null }
+      a.play().catch(() => {})
+    } catch {
+      try {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel()
+          const u = new SpeechSynthesisUtterance(txt)
+          u.lang = 'en-US'
+          u.rate = 0.92
+          const v = window.speechSynthesis.getVoices().find((x) => x.voiceURI === voiceURI)
+          if (v) u.voice = v
+          window.speechSynthesis.speak(u)
+        }
+      } catch {}
+    }
   }
 
   const send = async (content) => {
@@ -213,11 +238,12 @@ function PracticaVoz() {
           <label htmlFor="voice">Voz:</label>
           <select id="voice" value={voiceURI} onChange={(e) => setVoiceURI(e.target.value)}>
             {voices.map((v) => (
-              <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
+              <option key={v.name} value={v.name}>{v.name} ({v.locale})</option>
             ))}
           </select>
         </div>
       )}
+      <p className="voice-hint">💡 Puedes elegir una voz más adecuada: te recomiendo una voz neural de tu país o tu elección.</p>
 
       <div className="mode-tabs">
         <button className={mode === 'chat' ? 'on' : ''} onClick={() => setMode('chat')}>💬 Conversar</button>

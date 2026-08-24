@@ -379,6 +379,7 @@ input, select, textarea, button { max-width: 100%; }
 .voice-sub { color: #5a6472; margin: 4px 0 18px; }
 .voice-select { display: flex; align-items: center; gap: 8px; margin: -6px 0 16px; font-size: 14px; color: #5a6472; }
 .voice-select select { padding: 8px 12px; border: 1px solid var(--borde); border-radius: 10px; font-size: 14px; background: #fff; color: var(--texto); max-width: 320px; }
+.voice-hint { color: #6b7280; font-size: 13px; margin: 0 0 16px; }
 .voice-chat { display: flex; flex-direction: column; gap: 12px; background: #f7f9fc; border: 1px solid var(--borde); border-radius: 16px; padding: 18px; max-height: 58vh; overflow-y: auto; }
 .v-bubble { max-width: 86%; padding: 12px 15px; border-radius: 16px; line-height: 1.45; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
 .v-bubble.assistant { align-self: flex-start; background: #fff; border: 1px solid var(--borde); border-bottom-left-radius: 4px; }

@@ -190,19 +190,6 @@ export default function PracticaVoz() {
     setPhraseIdx((i) => (i + 1) % TARGET_PHRASES.length)
   }
 
-  if (!isPremium) {
-    return (
-      <div className="voice-page">
-        <div className="voice-lock">
-          <Icon name="crown" size={42} />
-          <h1>Práctica tu voz con IA</h1>
-          <p>Conversa en inglés con tu tutor personal que <b>escucha y habla</b>, y mejora tu pronunciación repitiendo frases. Aprende sin presión.</p>
-          <a className="btn-primary" href="/membresia">Hazte premium</a>
-        </div>
-      </div>
-    )
-  }
-
   const phrase = TARGET_PHRASES[phraseIdx]
 
   return (
@@ -226,6 +213,14 @@ export default function PracticaVoz() {
       </div>
 
       {mode === 'chat' ? (
+        !isPremium ? (
+          <div className="voice-lock">
+            <Icon name="crown" size={42} />
+            <h1>Conversa con la IA 🤖</h1>
+            <p>El modo conversación con tu tutor personal de inglés es <b>premium</b>. Mientras tanto, practica tu pronunciación gratis en “Repite y practica”.</p>
+            <a className="btn-primary" href="/membresia">Hazte premium</a>
+          </div>
+        ) : (
         <>
           <p className="voice-sub">Habla con tu tutor de inglés. Toca el micrófono y dile algo, o elige una frase. ¡Sin prisa, sin presión! 😊</p>
           <div className="voice-chat">
@@ -271,6 +266,7 @@ export default function PracticaVoz() {
             </button>
           )}
         </>
+        )
       ) : (
         <div className="repeat-card">
           <p className="repeat-trans">{phrase.es}</p>

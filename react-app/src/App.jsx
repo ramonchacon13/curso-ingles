@@ -38,7 +38,7 @@ export default function App() {
           <Route path="/chat" element={<Private><Chat /></Private>} />
           <Route path="/mensajes" element={<Private><Mensajes /></Private>} />
           <Route path="/tests" element={<Private><Tests /></Private>} />
-          <Route path="/practica-voz" element={<Private><PracticaVoz /></Private>} />
+          <Route path="/practica-voz" element={<PracticaVoz />} />
           <Route path="/membresia" element={<Private><Membership /></Private>} />
           <Route path="/perfil" element={<Private><Perfil /></Private>} />
           <Route path="*" element={<Navigate to="/" />} />

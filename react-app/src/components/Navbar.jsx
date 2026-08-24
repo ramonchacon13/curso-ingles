@@ -37,9 +37,7 @@ export default function Navbar() {
           <Link to="/chat" onClick={() => setOpen(false)}>Chat</Link>
           <Link to="/mensajes" onClick={() => setOpen(false)}>Mensajes</Link>
           <Link to="/tests" onClick={() => setOpen(false)}>Tests</Link>
-          <Link to="/practica-voz" onClick={() => setOpen(false)}>
-            {user?.is_premium ? 'Practicar voz' : 'Practicar voz 🔒'}
-          </Link>
+          <Link to="/practica-voz" onClick={() => setOpen(false)}>Practicar voz 🎙️</Link>
           <Link to="/perfil" onClick={() => setOpen(false)}>Perfil</Link>
           {user?.is_premium && <Link to="/membresia" onClick={() => setOpen(false)}>Mi plan</Link>}
         </div>

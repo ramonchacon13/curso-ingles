@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import GoogleButton from '../components/GoogleButton.jsx'
 
@@ -45,7 +45,7 @@ export default function Login() {
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <button className="btn-primary" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</button>
       </form>
-      <p className="auth-switch">¿No tienes cuenta? <a href="/register">Regístrate</a></p>
+      <p className="auth-switch">¿No tienes cuenta? <Link to="/register">Regístrate</Link></p>
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { aiApi } from '../api.js'
 import Icon from '../components/Icon.jsx'
@@ -217,7 +218,7 @@ export default function PracticaVoz() {
             <Icon name="crown" size={42} />
             <h1>Conversa con la IA 🤖</h1>
             <p>Inicia sesión gratis para conversar con tu tutor personal de inglés. Mientras tanto, practica tu pronunciación en “Repite y practica”.</p>
-            <a className="btn-primary" href="/register">Crear cuenta gratis</a>
+            <Link className="btn-primary" to="/register">Crear cuenta gratis</Link>
           </div>
         ) : (
         <>

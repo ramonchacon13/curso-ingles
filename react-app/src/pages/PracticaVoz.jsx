@@ -11,10 +11,54 @@ const SUGGESTIONS = [
   'Thank you, teacher!',
 ]
 
+const TARGET_PHRASES = [
+  { en: 'Hello, my name is Alex', es: 'Hola, mi nombre es Alex' },
+  { en: 'I would like a glass of water', es: 'Quisiera un vaso de agua' },
+  { en: 'Where is the train station', es: '¿Dónde está la estación de tren?' },
+  { en: 'I study English every day', es: 'Estudio inglés todos los días' },
+  { en: 'The weather is very nice today', es: 'El clima está muy agradable hoy' },
+  { en: 'Could you help me please', es: '¿Podría ayudarme por favor?' },
+  { en: 'I am happy to meet you', es: 'Estoy feliz de conocerte' },
+  { en: 'She sells sea shells by the sea', es: 'Trabalenguas: ella vende conchas marinas' },
+  { en: 'Can I have the menu', es: '¿Puedo tener el menú?' },
+  { en: 'I love learning new languages', es: 'Amo aprender nuevos idiomas' },
+]
+
+function clean(s) {
+  return s.toLowerCase().replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, ' ').trim()
+}
+
+function scoreAttempt(target, said) {
+  const tWords = clean(target).split(' ').filter(Boolean)
+  const sWords = clean(said).split(' ').filter(Boolean)
+  if (tWords.length === 0) return { score: 0, segs: [] }
+  let matches = 0
+  let sIdx = 0
+  const segs = tWords.map((w) => {
+    if (sIdx < sWords.length && sWords[sIdx] === w) {
+      matches++
+      sIdx++
+      return { w, ok: true }
+    }
+    if (sIdx < sWords.length) sIdx++
+    return { w, ok: false }
+  })
+  const score = Math.round((matches / tWords.length) * 100)
+  return { score, segs }
+}
+
+function tierMessage(score) {
+  if (score >= 90) return { text: '¡Perfecto! 🎉', cls: 'great' }
+  if (score >= 70) return { text: '¡Muy bien! 💪', cls: 'good' }
+  if (score >= 50) return { text: 'Bien, sigue así 👍', cls: 'ok' }
+  return { text: '¡Lo intentaste! Vuelve a probar 💡', cls: 'soft' }
+}
+
 export default function PracticaVoz() {
   const { user } = useAuth()
   const isPremium = user?.is_premium || user?.role === 'admin' || user?.role === 'moderator'
 
+  const [mode, setMode] = useState('chat') // 'chat' | 'repeat'
   const [messages, setMessages] = useState([
     { role: 'assistant', content: "Hi! I'm your English buddy 😊 Tap the mic and talk to me, or pick a phrase. Let's practice!" },
   ])
@@ -24,9 +68,13 @@ export default function PracticaVoz() {
   const [text, setText] = useState('')
   const [supported, setSupported] = useState(true)
 
+  const [phraseIdx, setPhraseIdx] = useState(0)
+  const [result, setResult] = useState(null) // {score, segs}
+
   const recRef = useRef(null)
   const endRef = useRef(null)
-  const synthRef = useRef(null)
+  const messagesRef = useRef(messages)
+  useEffect(() => { messagesRef.current = messages }, [messages])
 
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -42,21 +90,29 @@ export default function PracticaVoz() {
     rec.onresult = (e) => {
       const transcript = e.results[0][0].transcript.trim()
       setListening(false)
-      if (transcript) send(transcript)
+      if (!transcript) return
+      if (mode === 'repeat') {
+        const r = scoreAttempt(TARGET_PHRASES[phraseIdx].en, transcript)
+        setResult(r)
+        if (r.score >= 70) speak(TARGET_PHRASES[phraseIdx].en)
+      } else {
+        send(transcript)
+      }
     }
     rec.onerror = () => setListening(false)
     rec.onend = () => setListening(false)
     recRef.current = rec
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, phraseIdx])
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, thinking])
 
-  const speak = (text) => {
+  const speak = (txt) => {
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text)
+    const u = new SpeechSynthesisUtterance(txt)
     u.lang = 'en-US'
     u.rate = 0.95
     window.speechSynthesis.speak(u)
@@ -64,16 +120,14 @@ export default function PracticaVoz() {
 
   const send = async (content) => {
     if (!content.trim() || thinking) return
-    const next = [...messages, { role: 'user', content }]
-    setMessages(next)
+    setMessages((m) => [...m, { role: 'user', content }])
     setThinking(true)
     try {
-      const history = messages.map((m) => ({ role: m.role, content: m.content }))
+      const history = messagesRef.current.map((m) => ({ role: m.role, content: m.content }))
       const data = await aiApi.tutor(content, history)
-      const reply = data.reply
-      setMessages((m) => [...m, { role: 'assistant', content: reply }])
-      speak(reply)
-    } catch (err) {
+      setMessages((m) => [...m, { role: 'assistant', content: data.reply }])
+      speak(data.reply)
+    } catch {
       setMessages((m) => [...m, { role: 'assistant', content: '😊 Oops! I had a small problem. Try again in a moment.' }])
     } finally {
       setThinking(false)
@@ -95,69 +149,110 @@ export default function PracticaVoz() {
     }
   }
 
+  const nextPhrase = () => {
+    setResult(null)
+    setPhraseIdx((i) => (i + 1) % TARGET_PHRASES.length)
+  }
+
   if (!isPremium) {
     return (
       <div className="voice-page">
         <div className="voice-lock">
           <Icon name="crown" size={42} />
           <h1>Práctica tu voz con IA</h1>
-          <p>Conversa en inglés con tu tutor personal que <b>escucha y habla</b>. Aprende pronunciando, sin presión.</p>
+          <p>Conversa en inglés con tu tutor personal que <b>escucha y habla</b>, y mejora tu pronunciación repitiendo frases. Aprende sin presión.</p>
           <a className="btn-primary" href="/membresia">Hazte premium</a>
         </div>
       </div>
     )
   }
 
+  const phrase = TARGET_PHRASES[phraseIdx]
+
   return (
     <div className="voice-page">
       <h1><Icon name="chat" size={26} /> Practica tu voz 🎙️</h1>
-      <p className="voice-sub">Habla con tu tutor de inglés. Toca el micrófono y dile algo, o elige una frase. ¡Sin prisa, sin presión! 😊</p>
 
-      <div className="voice-chat">
-        {messages.map((m, i) => (
-          <div key={i} className={`v-bubble ${m.role}`}>
-            <div className="v-head">
-              {m.role === 'assistant' ? '🤖 Tutor' : '🗣️ Tú'}
-              {m.role === 'assistant' && (
-                <button className="v-speak" title="Escuchar" onClick={() => speak(m.content)}>
-                  <Icon name="send" size={14} />
-                </button>
-              )}
-            </div>
-            {m.content}
+      <div className="mode-tabs">
+        <button className={mode === 'chat' ? 'on' : ''} onClick={() => setMode('chat')}>💬 Conversar</button>
+        <button className={mode === 'repeat' ? 'on' : ''} onClick={() => { setMode('repeat'); setResult(null) }}>🎯 Repite y practica</button>
+      </div>
+
+      {mode === 'chat' ? (
+        <>
+          <p className="voice-sub">Habla con tu tutor de inglés. Toca el micrófono y dile algo, o elige una frase. ¡Sin prisa, sin presión! 😊</p>
+          <div className="voice-chat">
+            {messages.map((m, i) => (
+              <div key={i} className={`v-bubble ${m.role}`}>
+                <div className="v-head">
+                  {m.role === 'assistant' ? '🤖 Tutor' : '🗣️ Tú'}
+                  {m.role === 'assistant' && (
+                    <button className="v-speak" title="Escuchar" onClick={() => speak(m.content)}>
+                      <Icon name="send" size={14} />
+                    </button>
+                  )}
+                </div>
+                {m.content}
+              </div>
+            ))}
+            {thinking && <div className="v-bubble assistant"><div className="v-head">🤖 Tutor</div>Thinking… 💭</div>}
+            <div ref={endRef} />
           </div>
-        ))}
-        {thinking && <div className="v-bubble assistant"><div className="v-head">🤖 Tutor</div>Thinking… 💭</div>}
-        <div ref={endRef} />
-      </div>
 
-      <div className="voice-suggest">
-        {SUGGESTIONS.map((s) => (
-          <button key={s} className="chip" onClick={() => send(s)}>{s}</button>
-        ))}
-      </div>
+          <div className="voice-suggest">
+            {SUGGESTIONS.map((s) => (
+              <button key={s} className="chip" onClick={() => send(s)}>{s}</button>
+            ))}
+          </div>
 
-      {!textMode && (
-        <button className={`mic-btn ${listening ? 'on' : ''}`} onClick={toggleMic}>
-          <Icon name="send" size={26} />
-          <span>{listening ? 'Escuchando… toca para parar' : 'Toca y habla'}</span>
-        </button>
-      )}
+          {!textMode && (
+            <button className={`mic-btn ${listening ? 'on' : ''}`} onClick={toggleMic}>
+              <Icon name="send" size={26} />
+              <span>{listening ? 'Escuchando… toca para parar' : 'Toca y habla'}</span>
+            </button>
+          )}
+          {textMode && (
+            <form className="voice-form" onSubmit={(e) => { e.preventDefault(); send(text) }}>
+              <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe en inglés…" />
+              <button className="btn-primary" disabled={thinking || !text.trim()}>Enviar</button>
+            </form>
+          )}
+          {!supported && <p className="voice-note">Tu navegador no soporta reconocimiento de voz; usa el teclado para practicar. 💬</p>}
+          {supported && (
+            <button className="voice-toggle" onClick={() => setTextMode((t) => !t)}>
+              {textMode ? '🎤 Usar micrófono' : '⌨️ Escribir en su lugar'}
+            </button>
+          )}
+        </>
+      ) : (
+        <div className="repeat-card">
+          <p className="repeat-trans">{phrase.es}</p>
+          <div className="target-phrase">{phrase.en}</div>
+          <button className="v-speak big" title="Escuchar modelo" onClick={() => speak(phrase.en)}>
+            <Icon name="send" size={16} /> Escuchar modelo
+          </button>
 
-      {textMode && (
-        <form className="voice-form" onSubmit={(e) => { e.preventDefault(); send(text) }}>
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe en inglés…" />
-          <button className="btn-primary" disabled={thinking || !text.trim()}>Enviar</button>
-        </form>
-      )}
+          <button className={`mic-btn ${listening ? 'on' : ''}`} onClick={toggleMic}>
+            <Icon name="send" size={26} />
+            <span>{listening ? 'Repite la frase…' : 'Toca y repite la frase'}</span>
+          </button>
 
-      {!supported && (
-        <p className="voice-note">Tu navegador no soporta reconocimiento de voz; usa el teclado para practicar. 💬</p>
-      )}
-      {supported && (
-        <button className="voice-toggle" onClick={() => setTextMode((t) => !t)}>
-          {textMode ? '🎤 Usar micrófono' : '⌨️ Escribir en su lugar'}
-        </button>
+          {result && (
+            <div className="score-box">
+              <div className={`score-ring ${tierMessage(result.score).cls}`}>{result.score}%</div>
+              <p className="score-msg">{tierMessage(result.score).text}</p>
+              <div className="word-line">
+                {result.segs.map((s, i) => (
+                  <span key={i} className={`word ${s.ok ? 'ok' : 'bad'}`}>{s.w}</span>
+                ))}
+              </div>
+              <div className="repeat-actions">
+                <button className="btn-ghost" onClick={() => setResult(null)}>Reintentar</button>
+                <button className="btn-primary" onClick={nextPhrase}>Otra frase →</button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

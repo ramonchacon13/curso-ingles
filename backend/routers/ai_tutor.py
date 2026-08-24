@@ -36,12 +36,6 @@ async def tutor(
     data: TutorRequest,
     current: User = Depends(get_current_user),
 ):
-    if not current.is_premium and current.role not in ("admin", "moderator"):
-        raise HTTPException(
-            status_code=403,
-            detail="Esta función es exclusiva del plan premium.",
-        )
-
     if not OPENROUTER_API_KEY:
         raise HTTPException(
             status_code=503,

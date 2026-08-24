@@ -65,7 +65,6 @@ function pickBestVoice(vs) {
 
 export default function PracticaVoz() {
   const { user } = useAuth()
-  const isPremium = user?.is_premium || user?.role === 'admin' || user?.role === 'moderator'
 
   const [mode, setMode] = useState('chat') // 'chat' | 'repeat'
   const [messages, setMessages] = useState([
@@ -213,12 +212,12 @@ export default function PracticaVoz() {
       </div>
 
       {mode === 'chat' ? (
-        !isPremium ? (
+        !user ? (
           <div className="voice-lock">
             <Icon name="crown" size={42} />
             <h1>Conversa con la IA 🤖</h1>
-            <p>El modo conversación con tu tutor personal de inglés es <b>premium</b>. Mientras tanto, practica tu pronunciación gratis en “Repite y practica”.</p>
-            <a className="btn-primary" href="/membresia">Hazte premium</a>
+            <p>Inicia sesión gratis para conversar con tu tutor personal de inglés. Mientras tanto, practica tu pronunciación en “Repite y practica”.</p>
+            <a className="btn-primary" href="/register">Crear cuenta gratis</a>
           </div>
         ) : (
         <>

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Text, ForeignKey, DateTime, JSON, Float
+    Column, Integer, String, Boolean, Text, ForeignKey, DateTime, JSON, Float, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 
@@ -141,4 +141,18 @@ class Progreso(Base):
 
     __table_args__ = (
         __import__("sqlalchemy").UniqueConstraint("user_id", "lesson_id", name="uq_progreso"),
+    )
+
+
+class SolicitudPrivada(Base):
+    __tablename__ = "solicitudes_privadas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    from_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    to_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    status = Column(String(12), default="pending")  # pending | accepted | declined
+    created_at = Column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("from_id", "to_id", name="uq_sol_priv"),
     )

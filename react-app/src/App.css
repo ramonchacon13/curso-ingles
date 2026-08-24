@@ -197,6 +197,17 @@ a:hover { text-decoration: none; }
 .msg-header-info strong { color: var(--azul-osc); }
 .msg-header-info small { color: var(--verde-osc); font-weight: 600; }
 .msg-status { margin-left: auto; color: #99a; font-size: 13px; }
+.mensajes-title { display: flex; align-items: center; gap: 10px; color: var(--azul-osc); margin-bottom: 16px; }
+.sol-badge { background: #e74c3c; color: #fff; border-radius: 999px; font-size: 12px; font-weight: 800; padding: 2px 9px; }
+.sol-box { background: #fff8e6; border-bottom: 1px solid var(--borde); padding: 10px 12px; }
+.sol-title { font-size: 12px; font-weight: 800; color: #8a5a00; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .3px; }
+.sol-item { display: flex; flex-direction: column; gap: 5px; padding: 6px 0; border-top: 1px dashed #e6d3a3; }
+.sol-item:first-of-type { border-top: none; }
+.sol-name { font-weight: 700; color: var(--texto); font-size: 14px; }
+.sol-actions { display: flex; gap: 6px; }
+.sol-ok { color: #1f7a34; border: 1px solid #bfe3c6; }
+.sol-no { color: #c0392b; border: 1px solid #f0c2bd; }
+.msg-pending { background: #eef3fb; color: #2b4a7a; font-size: 13px; padding: 10px 16px; border-bottom: 1px solid var(--borde); }
 .msg-del-user { margin-left: auto; background: #fdecea; border: 1px solid #f5c2bd; color: #c0392b; border-radius: 10px; padding: 7px 10px; cursor: pointer; display: inline-flex; }
 .msg-del-user:hover { background: #f9d6d2; }
 

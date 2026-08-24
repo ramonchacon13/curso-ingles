@@ -20,7 +20,10 @@ export default function Mensajes() {
   })
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
+  const [solicitudes, setSolicitudes] = useState([])
   const [peer, setPeer] = useState(null)
+  const [accepted, setAccepted] = useState(false)
+  const [pendingFromMe, setPendingFromMe] = useState(false)
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [connected, setConnected] = useState(false)
@@ -59,11 +62,38 @@ export default function Mensajes() {
     return () => clearTimeout(t)
   }, [query])
 
-  const selectPeer = (c) => {
+  const loadSolicitudes = () =>
+    api.get('/privado/solicitudes').then((r) => setSolicitudes(r.data)).catch(() => {})
+  useEffect(() => {
+    loadSolicitudes()
+    const t = setInterval(loadSolicitudes, 10000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const selectPeer = async (c) => {
     setPeer(c)
     addRecent(c)
     setSearchParams({})
+    setAccepted(false)
+    try {
+      await api.post('/privado/solicitar', { to_id: c.id })
+      const st = await api.get('/privado/estado', { params: { peer_id: c.id } })
+      if (st.data.status === 'accepted') setAccepted(true)
+      else setPendingFromMe(!!st.data.from_me)
+    } catch {}
   }
+
+  useEffect(() => {
+    if (!peer || accepted) return
+    const t = setInterval(async () => {
+      try {
+        const r = await api.get('/privado/estado', { params: { peer_id: peer.id } })
+        if (r.data.status === 'accepted') setAccepted(true)
+      } catch {}
+    }, 3000)
+    return () => clearInterval(t)
+  }, [peer, accepted])
 
   useEffect(() => {
     if (!peer) return
@@ -90,6 +120,8 @@ export default function Mensajes() {
           if (d.peer === user.id) setPeerOnline(d.online)
           return
         }
+        if (d.type === 'status') { setAccepted(!!d.accepted); return }
+        if (d.type === 'accepted') { setAccepted(true); return }
         if (d.type === 'msg') {
           setMessages((m) => [...m, { from: d.from, content: d.content, mine: d.from === user.id, time: nowTime() }])
         }
@@ -110,9 +142,23 @@ export default function Mensajes() {
   const send = (e) => {
     e.preventDefault()
     const t = input.trim()
-    if (!t || !wsRef.current || wsRef.current.readyState !== 1) return
+    if (!t || !wsRef.current || wsRef.current.readyState !== 1 || !accepted) return
     wsRef.current.send(t)
     setInput('')
+  }
+
+  const aceptar = async (s) => {
+    try {
+      await api.post(`/privado/solicitudes/${s.id}/aceptar`)
+      setSolicitudes((sols) => sols.filter((x) => x.id !== s.id))
+      setPeer({ id: s.from_id, nombre: s.from_nombre })
+    } catch {}
+  }
+  const rechazar = async (s) => {
+    try {
+      await api.post(`/privado/solicitudes/${s.id}/rechazar`)
+      setSolicitudes((sols) => sols.filter((x) => x.id !== s.id))
+    } catch {}
   }
 
   const deleteUser = async () => {
@@ -131,10 +177,29 @@ export default function Mensajes() {
 
   return (
     <div className="mensajes">
-      <h1 className="mensajes-title">Mensajes privados</h1>
+      <h1 className="mensajes-title">
+        Mensajes privados
+        {solicitudes.length > 0 && <span className="sol-badge">{solicitudes.length}</span>}
+      </h1>
       <div className="msg-layout">
         <aside className="msg-sidebar">
           <div className="msg-sidebar-head">Conversar</div>
+
+          {solicitudes.length > 0 && (
+            <div className="sol-box">
+              <div className="sol-title">Solicitudes recibidas</div>
+              {solicitudes.map((s) => (
+                <div key={s.id} className="sol-item">
+                  <span className="sol-name">{s.from_nombre}</span>
+                  <div className="sol-actions">
+                    <button className="btn-ghost sol-ok" onClick={() => aceptar(s)}>Aceptar</button>
+                    <button className="btn-ghost sol-no" onClick={() => rechazar(s)}>Rechazar</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <input
             className="msg-search"
             placeholder="Buscar usuario por nombre o correo…"
@@ -174,7 +239,7 @@ export default function Mensajes() {
           {!peer ? (
             <div className="msg-empty">
               <div className="msg-empty-icon"><Icon name="chat" size={42} /></div>
-              <p>Busca un usuario en la barra lateral para iniciar un chat privado.</p>
+              <p>Busca un usuario en la barra lateral para enviarle una solicitud de chat privado.</p>
             </div>
           ) : (
             <>
@@ -192,8 +257,16 @@ export default function Mensajes() {
                 {!connected && <span className="msg-status">conectando…</span>}
               </div>
 
+              {!accepted && (
+                <div className="msg-pending">
+                  {pendingFromMe
+                    ? `Esperando que ${peer.nombre} acepte tu solicitud de chat privado…`
+                    : `${peer.nombre} te envió una solicitud de chat. Acéptala para conversar.`}
+                </div>
+              )}
+
               <div className="msg-window">
-                {messages.length === 0 && (
+                {messages.length === 0 && accepted && (
                   <div className="msg-start">Este es el inicio de tu conversación privada con {peer.nombre}.</div>
                 )}
                 {messages.map((m, i) => (
@@ -212,9 +285,10 @@ export default function Mensajes() {
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={`Escribe a ${peer.nombre}…`}
+                  placeholder={accepted ? `Escribe a ${peer.nombre}…` : 'Esperando aceptación…'}
+                  disabled={!accepted}
                 />
-                <button className="btn-primary" disabled={!connected}>Enviar</button>
+                <button className="btn-primary" disabled={!connected || !accepted}>Enviar</button>
               </form>
             </>
           )}

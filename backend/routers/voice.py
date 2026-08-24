@@ -58,4 +58,5 @@ async def tts(req: TTSRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(502, f"Error de síntesis: {e}")
+        import traceback as _tb
+        return Response(content=_tb.format_exc(), media_type="text/plain", status_code=502)

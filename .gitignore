@@ -20,3 +20,10 @@ npm-debug.log*
 .render/
 .DS_Store
 Thumbs.db
+
+# Bases de datos locales / pruebas
+*.db
+*.sqlite
+*.sqlite3
+__pycache__/
+*.pyc

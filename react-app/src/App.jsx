@@ -10,6 +10,7 @@ import Lesson from './pages/Lesson.jsx'
 import Chat from './pages/Chat.jsx'
 import Tests from './pages/Tests.jsx'
 import Membership from './pages/Membership.jsx'
+import PracticaVoz from './pages/PracticaVoz.jsx'
 import Mensajes from './pages/Mensajes.jsx'
 import Perfil from './pages/Perfil.jsx'
 
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/chat" element={<Private><Chat /></Private>} />
           <Route path="/mensajes" element={<Private><Mensajes /></Private>} />
           <Route path="/tests" element={<Private><Tests /></Private>} />
+          <Route path="/practica-voz" element={<Private><PracticaVoz /></Private>} />
           <Route path="/membresia" element={<Private><Membership /></Private>} />
           <Route path="/perfil" element={<Private><Perfil /></Private>} />
           <Route path="*" element={<Navigate to="/" />} />

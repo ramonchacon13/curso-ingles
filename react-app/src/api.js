@@ -52,6 +52,10 @@ export const chatApi = {
   deleteMessage: (id) => api.del(`/chat/messages/${id}`),
 }
 
+export const aiApi = {
+  tutor: (message, history = []) => api.post('/ai/tutor', { message, history }),
+}
+
 export const userApi = {
   progreso: () => api.get('/me/progreso'),
   updatePerfil: (data) => api.put('/me', data),

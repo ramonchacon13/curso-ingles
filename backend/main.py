@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import auth, courses, chat, tests, users, private_chat
+from routers import auth, courses, chat, tests, users, private_chat, ai_tutor
 from database import engine, Base
 import models
 
@@ -21,6 +21,7 @@ app.include_router(chat.router)
 app.include_router(tests.router)
 app.include_router(users.router)
 app.include_router(private_chat.router)
+app.include_router(ai_tutor.router)
 
 
 @app.get("/api/health")

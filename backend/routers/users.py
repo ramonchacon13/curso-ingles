@@ -275,17 +275,21 @@ def admin_eliminar_todos(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
-    no_admin = select(User.id).where(User.role != "admin")
+    temp = select(User.id).where(
+        User.role != "admin",
+        User.is_premium == False,
+        ~User.id.in_(select(Progreso.user_id)),
+    )
     try:
         db.execute(
             delete(PrivateMessage).where(
-                PrivateMessage.user_id.in_(no_admin) | PrivateMessage.peer_id.in_(no_admin)
+                PrivateMessage.user_id.in_(temp) | PrivateMessage.peer_id.in_(temp)
             )
         )
-        db.execute(delete(Progreso).where(Progreso.user_id.in_(no_admin)))
-        db.execute(delete(ChatMessage).where(ChatMessage.user_id.in_(no_admin)))
-        db.execute(delete(TestResult).where(TestResult.user_id.in_(no_admin)))
-        res = db.execute(delete(User).where(User.role != "admin"))
+        db.execute(delete(Progreso).where(Progreso.user_id.in_(temp)))
+        db.execute(delete(ChatMessage).where(ChatMessage.user_id.in_(temp)))
+        db.execute(delete(TestResult).where(TestResult.user_id.in_(temp)))
+        res = db.execute(delete(User).where(User.id.in_(temp)))
         db.commit()
         return {"ok": True, "eliminados": res.rowcount}
     except Exception as e:

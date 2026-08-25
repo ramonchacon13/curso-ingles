@@ -80,7 +80,7 @@ export default function AdminUsuarios() {
 
   async function eliminarTodos() {
     if (!window.confirm(
-      "¿Eliminar TODOS los usuarios excepto los administradores?\n\nSe borrará su progreso, mensajes y resultados. Esta acción no se puede deshacer."
+      "¿Eliminar solo las cuentas de prueba (sin progreso y sin premium)?\n\nLos usuarios con avance o plan premium NO se eliminarán. Esta acción no se puede deshacer."
     )) return
     setMsg("")
     try {
@@ -124,7 +124,7 @@ export default function AdminUsuarios() {
             className="btn-ghost"
             style={{ color: "#ef4444", marginLeft: "auto" }}
             onClick={eliminarTodos}
-          >Eliminar todos los de prueba</button>
+          >Eliminar cuentas de prueba</button>
         </div>
         {msg && (
           <p className={msg.includes("Error") ? "error" : "success"} style={{ marginTop: "8px" }}>{msg}</p>

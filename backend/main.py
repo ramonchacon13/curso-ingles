@@ -63,6 +63,10 @@ def _patch_schema():
             db.execute(text("ALTER TABLE usuarios ADD COLUMN avatar_value TEXT"))
             db.commit()
             print("patch: columna 'avatar_value' agregada")
+        # Limpieza: tabla huérfana de la funcion de solicitudes privadas ya eliminada del codigo
+        db.execute(text("DROP TABLE IF EXISTS solicitudes_privadas CASCADE"))
+        db.commit()
+        print("patch: tabla huérfana 'solicitudes_privadas' eliminada (si existia)")
         # Asigna rol admin a los correos configurados en ADMIN_EMAILS
         emails = [e.strip().lower() for e in (ADMIN_EMAILS or "").split(",") if e.strip()]
         if emails:

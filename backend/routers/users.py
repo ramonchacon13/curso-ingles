@@ -257,13 +257,40 @@ def eliminar_usuario(
     u = db.get(User, user_id)
     if not u:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    db.execute(delete(PrivateMessage).where((PrivateMessage.user_id == user_id) | (PrivateMessage.peer_id == user_id)))
-    db.execute(delete(Progreso).where(Progreso.user_id == user_id))
-    db.execute(delete(ChatMessage).where(ChatMessage.user_id == user_id))
-    db.execute(delete(TestResult).where(TestResult.user_id == user_id))
-    db.delete(u)
-    db.commit()
+    try:
+        db.execute(delete(PrivateMessage).where((PrivateMessage.user_id == user_id) | (PrivateMessage.peer_id == user_id)))
+        db.execute(delete(Progreso).where(Progreso.user_id == user_id))
+        db.execute(delete(ChatMessage).where(ChatMessage.user_id == user_id))
+        db.execute(delete(TestResult).where(TestResult.user_id == user_id))
+        db.delete(u)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"No se pudo eliminar el usuario: {str(e)[:200]}")
     return {"ok": True, "eliminado": user_id}
+
+
+@router.delete("/admin/usuarios", response_model=dict)
+def admin_eliminar_todos(
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    no_admin = select(User.id).where(User.role != "admin")
+    try:
+        db.execute(
+            delete(PrivateMessage).where(
+                PrivateMessage.user_id.in_(no_admin) | PrivateMessage.peer_id.in_(no_admin)
+            )
+        )
+        db.execute(delete(Progreso).where(Progreso.user_id.in_(no_admin)))
+        db.execute(delete(ChatMessage).where(ChatMessage.user_id.in_(no_admin)))
+        db.execute(delete(TestResult).where(TestResult.user_id.in_(no_admin)))
+        res = db.execute(delete(User).where(User.role != "admin"))
+        db.commit()
+        return {"ok": True, "eliminados": res.rowcount}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"No se pudo eliminar: {str(e)[:200]}")
 
 
 def _serialize(u):

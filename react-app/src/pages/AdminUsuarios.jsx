@@ -78,6 +78,21 @@ export default function AdminUsuarios() {
     }
   }
 
+  async function eliminarTodos() {
+    if (!window.confirm(
+      "¿Eliminar TODOS los usuarios excepto los administradores?\n\nSe borrará su progreso, mensajes y resultados. Esta acción no se puede deshacer."
+    )) return
+    setMsg("")
+    try {
+      const r = await api.del("/admin/usuarios")
+      setMsg(`Se eliminaron ${r.eliminados} usuario(s) de prueba`)
+      setPage(1)
+      cargar()
+    } catch (e) {
+      setMsg(e.message || "Error al eliminar")
+    }
+  }
+
   if (!user || user.role !== "admin") {
     return (
       <div className="card">
@@ -105,6 +120,11 @@ export default function AdminUsuarios() {
           {q && (
             <button className="btn-ghost" onClick={() => { setQ(""); setPage(1) }}>Limpiar</button>
           )}
+          <button
+            className="btn-ghost"
+            style={{ color: "#ef4444", marginLeft: "auto" }}
+            onClick={eliminarTodos}
+          >Eliminar todos los de prueba</button>
         </div>
         {msg && (
           <p className={msg.includes("Error") ? "error" : "success"} style={{ marginTop: "8px" }}>{msg}</p>

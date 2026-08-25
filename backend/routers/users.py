@@ -258,10 +258,6 @@ def eliminar_usuario(
     if not u:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     try:
-        db.execute(text("DELETE FROM solicitudes_privadas WHERE from_id = :u OR to_id = :u").params(u=user_id))
-    except Exception:
-        pass
-    try:
         db.execute(delete(PrivateMessage).where((PrivateMessage.user_id == user_id) | (PrivateMessage.peer_id == user_id)))
         db.execute(delete(Progreso).where(Progreso.user_id == user_id))
         db.execute(delete(ChatMessage).where(ChatMessage.user_id == user_id))
@@ -280,10 +276,6 @@ def admin_eliminar_todos(
     admin: User = Depends(require_admin),
 ):
     no_admin = select(User.id).where(User.role != "admin")
-    try:
-        db.execute(text("DELETE FROM solicitudes_privadas WHERE from_id IN (SELECT id FROM usuarios WHERE role <> 'admin') OR to_id IN (SELECT id FROM usuarios WHERE role <> 'admin')"))
-    except Exception:
-        pass
     try:
         db.execute(
             delete(PrivateMessage).where(

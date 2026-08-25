@@ -14,6 +14,7 @@ import Membership from './pages/Membership.jsx'
 import PracticaVoz from './pages/PracticaVoz.jsx'
 import Mensajes from './pages/Mensajes.jsx'
 import Perfil from './pages/Perfil.jsx'
+import AdminUsuarios from './pages/AdminUsuarios.jsx'
 
 function Private({ children }) {
   const { user } = useAuth()
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/practica-voz" element={<PracticaVoz />} />
           <Route path="/membresia" element={<Private><Membership /></Private>} />
           <Route path="/perfil" element={<Private><Perfil /></Private>} />
+          <Route path="/admin/usuarios" element={<Private><AdminUsuarios /></Private>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

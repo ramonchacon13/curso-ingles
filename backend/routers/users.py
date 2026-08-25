@@ -5,7 +5,7 @@ import json
 
 from database import get_db
 from models import User, Progreso, Lesson, Level, Course, PrivateMessage, ChatMessage, TestResult
-from auth_deps import get_current_user
+from auth_deps import get_current_user, require_admin
 from auth_utils import hash_password, verify_password
 from sqlalchemy import select, func, delete
 
@@ -211,3 +211,102 @@ def eliminar_usuario(
     db.delete(u)
     db.commit()
     return {"ok": True, "eliminado": user_id}
+
+
+def _serialize(u):
+    return {
+        "id": u.id,
+        "nombre": u.nombre,
+        "email": u.email,
+        "role": u.role,
+        "nivel": u.nivel,
+        "is_premium": u.is_premium,
+        "plan": u.plan,
+        "email_opt_in": u.email_opt_in,
+        "created_at": u.created_at.isoformat() if u.created_at else None,
+    }
+
+
+@router.get("/admin/usuarios", response_model=dict)
+def admin_listar_usuarios(
+    page: int = 1,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    page = max(1, page)
+    limit = min(max(1, limit), 500)
+    offset = (page - 1) * limit
+    total = db.scalar(select(func.count(User.id))) or 0
+    usuarios = db.scalars(
+        select(User).order_by(User.id).offset(offset).limit(limit)
+    ).all()
+    return {"items": [_serialize(u) for u in usuarios], "total": total, "page": page, "limit": limit}
+
+
+@router.get("/admin/usuarios/buscar", response_model=list[dict])
+def admin_buscar_usuarios(
+    q: str = "",
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    if not q or not q.strip():
+        return []
+    like = f"%{q.strip().lower()}%"
+    usuarios = db.scalars(
+        select(User)
+        .where((func.lower(User.nombre).like(like)) | (func.lower(User.email).like(like)))
+        .order_by(User.id)
+        .limit(200)
+    ).all()
+    return [_serialize(u) for u in usuarios]
+
+
+class AdminUserUpdate(BaseModel):
+    nombre: str | None = None
+    email: str | None = None
+    role: str | None = None
+    nivel: str | None = None
+    is_premium: bool | None = None
+
+
+@router.put("/admin/usuarios/{user_id}", response_model=dict)
+def admin_actualizar_usuario(
+    user_id: int,
+    data: AdminUserUpdate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    u = db.get(User, user_id)
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    if data.nombre is not None and data.nombre.strip():
+        u.nombre = data.nombre.strip()
+
+    if data.email is not None and data.email.strip():
+        nuevo = data.email.strip().lower()
+        if nuevo != u.email:
+            existe = db.scalar(
+                select(User).where(func.lower(User.email) == nuevo, User.id != u.id)
+            )
+            if existe:
+                raise HTTPException(status_code=400, detail="El correo ya está registrado")
+            u.email = nuevo
+
+    if data.role is not None:
+        if data.role not in ("user", "admin", "moderator"):
+            raise HTTPException(status_code=400, detail="Rol inválido")
+        u.role = data.role
+
+    if data.nivel is not None:
+        if data.nivel not in NIVELES_VALIDOS:
+            raise HTTPException(status_code=400, detail="Nivel inválido")
+        u.nivel = data.nivel
+
+    if data.is_premium is not None:
+        u.is_premium = bool(data.is_premium)
+        u.plan = "premium" if u.is_premium else "free"
+
+    db.commit()
+    return _serialize(u)

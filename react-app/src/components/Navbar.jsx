@@ -39,6 +39,7 @@ export default function Navbar() {
           <Link to="/tests" onClick={() => setOpen(false)}>Tests</Link>
           <Link to="/practica-voz" onClick={() => setOpen(false)}>Practicar voz 🎙️</Link>
           <Link to="/perfil" onClick={() => setOpen(false)}>Perfil</Link>
+          {user?.role === 'admin' && <Link to="/admin/usuarios" onClick={() => setOpen(false)}>Usuarios</Link>}
           {user?.is_premium && <Link to="/membresia" onClick={() => setOpen(false)}>Mi plan</Link>}
         </div>
         <div className="nav-user">

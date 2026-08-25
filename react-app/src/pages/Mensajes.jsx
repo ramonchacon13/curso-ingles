@@ -34,8 +34,8 @@ export default function Mensajes() {
     const pid = searchParams.get('peer')
     if (pid && !peer) {
       api.get(`/usuarios/${pid}`).then((r) => {
-        const u = r.data
-        setPeer({ id: u.id, nombre: u.nombre })
+      const u = r
+      setPeer({ id: u.id, nombre: u.nombre })
         addRecent({ id: u.id, nombre: u.nombre })
       }).catch(() => {})
     }
@@ -54,7 +54,7 @@ export default function Mensajes() {
     if (!query.trim()) { setResults([]); return }
     const t = setTimeout(() => {
       api.get('/usuarios/buscar', { params: { q: query.trim() } })
-        .then((r) => setResults(r.data))
+        .then((r) => setResults(r))
         .catch(() => setResults([]))
     }, 300)
     return () => clearTimeout(t)
@@ -126,7 +126,7 @@ export default function Mensajes() {
       try { localStorage.setItem('pm_recent', JSON.stringify(next)) } catch {}
       setPeer(null)
     } catch (e) {
-      window.alert(e?.response?.data?.detail || 'No se pudo eliminar el usuario')
+      window.alert(e?.message || 'No se pudo eliminar el usuario')
     }
   }
 

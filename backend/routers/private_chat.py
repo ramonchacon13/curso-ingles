@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from database import SessionLocal
-from models import User, PrivateMessage, SolicitudPrivada
+from models import User, PrivateMessage
 import auth_utils
 
 router = APIRouter(tags=["chat-privado"])
@@ -29,20 +29,6 @@ def auth_token(token: str):
 
 def peer_online(peer_id: int):
     return peer_id in private_conns and len(private_conns[peer_id]) > 0
-
-
-def request_accepted(a: int, b: int) -> bool:
-    db = SessionLocal()
-    try:
-        row = db.scalar(
-            select(SolicitudPrivada).where(
-                ((SolicitudPrivada.from_id == a) & (SolicitudPrivada.to_id == b))
-                | ((SolicitudPrivada.from_id == b) & (SolicitudPrivada.to_id == a))
-            )
-        )
-        return bool(row and row.status == "accepted")
-    finally:
-        db.close()
 
 
 async def deliver(user_id: int, payload: dict):
@@ -91,8 +77,6 @@ async def private_ws(websocket: WebSocket):
             "content": m.content,
         }))
 
-    await websocket.send_text(json.dumps({"type": "status", "accepted": request_accepted(me, peer_id)}))
-
     await deliver(peer_id, {"type": "online", "peer": me, "online": True})
 
     try:
@@ -107,12 +91,6 @@ async def private_ws(websocket: WebSocket):
                 continue
             text = data.strip()
             if not text:
-                continue
-            if not request_accepted(me, peer_id):
-                try:
-                    await websocket.send_text(json.dumps({"type": "error", "message": "El chat aún no ha sido aceptado."}))
-                except Exception:
-                    pass
                 continue
             db = SessionLocal()
             pm = PrivateMessage(

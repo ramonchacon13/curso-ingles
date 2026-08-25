@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import json
 
 from database import get_db
-from models import User, Progreso, Lesson, Level, Course, PrivateMessage, ChatMessage, TestResult, SolicitudPrivada
+from models import User, Progreso, Lesson, Level, Course, PrivateMessage, ChatMessage, TestResult
 from auth_deps import get_current_user
 from auth_utils import hash_password, verify_password
 from sqlalchemy import select, func, delete
@@ -150,106 +150,6 @@ def estado_membresia(current: User = Depends(get_current_user)):
         "is_premium": current.is_premium,
         "precio_mensual": 9.99,
     }
-
-
-class SolicitudIn(BaseModel):
-    to_id: int
-
-
-@router.post("/privado/solicitar", response_model=dict)
-def solicitar_privado(
-    data: SolicitudIn,
-    db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
-):
-    if data.to_id == current.id:
-        raise HTTPException(status_code=400, detail="No puedes enviarte una solicitud a ti mismo")
-    existing = db.scalar(
-        select(SolicitudPrivada).where(
-            (SolicitudPrivada.from_id == current.id) & (SolicitudPrivada.to_id == data.to_id)
-        )
-    )
-    if not existing:
-        existing = SolicitudPrivada(from_id=current.id, to_id=data.to_id, status="pending")
-        db.add(existing)
-        db.commit()
-        db.refresh(existing)
-    elif existing.status == "declined":
-        existing.status = "pending"
-        db.commit()
-    return {"status": existing.status, "solicitud_id": existing.id}
-
-
-@router.get("/privado/solicitudes", response_model=list[dict])
-def listar_solicitudes(
-    db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
-):
-    rows = db.scalars(
-        select(SolicitudPrivada)
-        .where((SolicitudPrivada.to_id == current.id) & (SolicitudPrivada.status == "pending"))
-    ).all()
-    out = []
-    for r in rows:
-        u = db.get(User, r.from_id)
-        out.append({"id": r.id, "from_id": r.from_id, "from_nombre": u.nombre if u else "Usuario"})
-    return out
-
-
-@router.post("/privado/solicitudes/{sid}/aceptar", response_model=dict)
-def aceptar_solicitud(
-    sid: int,
-    db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
-):
-    r = db.get(SolicitudPrivada, sid)
-    if not r or r.to_id != current.id:
-        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
-    r.status = "accepted"
-    db.commit()
-    try:
-        import routers.private_chat as pc
-        for ws in list(pc.private_conns.get(r.from_id, [])):
-            try:
-                ws.send_text(json.dumps({"type": "accepted", "peer": current.id}))
-            except Exception:
-                pass
-    except Exception:
-        pass
-    return {"ok": True}
-
-
-@router.post("/privado/solicitudes/{sid}/rechazar", response_model=dict)
-def rechazar_solicitud(
-    sid: int,
-    db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
-):
-    r = db.get(SolicitudPrivada, sid)
-    if not r or r.to_id != current.id:
-        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
-    r.status = "declined"
-    db.commit()
-    return {"ok": True}
-
-
-@router.get("/privado/estado", response_model=dict)
-def estado_privado(
-    peer_id: int,
-    db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
-):
-    r = db.scalar(
-        select(SolicitudPrivada).where(
-            ((SolicitudPrivada.from_id == current.id) & (SolicitudPrivada.to_id == peer_id))
-            | ((SolicitudPrivada.from_id == peer_id) & (SolicitudPrivada.to_id == current.id))
-        )
-    )
-    if not r:
-        return {"status": "none"}
-    if r.status == "accepted":
-        return {"status": "accepted"}
-    return {"status": "pending", "from_me": r.from_id == current.id}
 
 
 @router.get("/usuarios", response_model=list[dict])

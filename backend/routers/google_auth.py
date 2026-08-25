@@ -33,7 +33,9 @@ def _frontend():
 async def google_login(request: Request):
     if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET):
         return RedirectResponse(f"{_frontend()}/login?error=oauth_disabled")
-    redirect_uri = str(request.base_url).rstrip("/") + "/api/auth/google/callback"
+    host = request.headers.get("host") or request.url.hostname
+    scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
+    redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 

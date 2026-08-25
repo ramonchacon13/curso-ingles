@@ -24,6 +24,8 @@ class User(Base):
     plan = Column(String(20), default="free")
     role = Column(String(20), default="user")
     email_opt_in = Column(Boolean, default=True)
+    avatar_kind = Column(String(20), default="initials")
+    avatar_value = Column(Text, nullable=True)
     created_at = Column(DateTime, default=utcnow)
 
     messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")

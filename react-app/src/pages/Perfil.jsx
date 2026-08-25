@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { userApi } from '../api.js'
 import Icon from '../components/Icon.jsx'
+import Avatar from '../components/Avatar.jsx'
 
 const NIVELES = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
@@ -14,6 +15,8 @@ export default function Perfil() {
   const [repetir, setRepetir] = useState('')
   const [progreso, setProgreso] = useState(null)
   const [optIn, setOptIn] = useState(user?.email_opt_in ?? true)
+  const [avatarKind, setAvatarKind] = useState(user?.avatar_kind || 'initials')
+  const [avatarValue, setAvatarValue] = useState(user?.avatar_value || '')
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
 
@@ -25,7 +28,7 @@ export default function Perfil() {
     e.preventDefault()
     setMsg(''); setErr('')
     try {
-      await userApi.updatePerfil({ nombre, email_opt_in: optIn })
+      await userApi.updatePerfil({ nombre, email_opt_in: optIn, avatar_kind: avatarKind, avatar_value: avatarValue || null })
       await refresh()
       setMsg('Perfil actualizado.')
     } catch (e2) {
@@ -59,11 +62,68 @@ export default function Perfil() {
     }
   }
 
+  const EMOJIS = ['🦊', '🐱', '🐶', '🦁', '🐼', '🐨', '🐸', '🐵', '🦄', '🐯', '🐰', '🐻', '🐧', '🦉', '🌟', '🔥', '🌈', '⚡', '🍀', '🌸', '👽', '🤖', '💡', '🎯']
+
+  const pickEmoji = (e) => {
+    setAvatarKind('emoji')
+    setAvatarValue(e)
+  }
+
+  const onFile = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const max = 160
+        const scale = Math.min(1, max / Math.max(img.width, img.height))
+        const w = Math.max(1, Math.round(img.width * scale))
+        const h = Math.max(1, Math.round(img.height * scale))
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        setAvatarValue(canvas.toDataURL('image/png'))
+        setAvatarKind('image')
+      }
+      img.src = reader.result
+    }
+    reader.readAsDataURL(file)
+  }
+
   return (
     <div className="page narrow">
       <h1><Icon name="user" size={26} /> Mi perfil</h1>
       {msg && <div className="alert ok">{msg}</div>}
       {err && <div className="alert error">{err}</div>}
+
+      <section className="card">
+        <h2>Avatar</h2>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Avatar user={{ id: user?.id, nombre: nombre || user?.nombre, avatar_kind: avatarKind, avatar_value: avatarValue || null }} size={80} />
+          <div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button type="button" className={avatarKind === 'initials' ? 'btn-primary' : 'btn-ghost'} onClick={() => { setAvatarKind('initials'); setAvatarValue('') }}>Iniciales</button>
+              <button type="button" className={avatarKind === 'emoji' ? 'btn-primary' : 'btn-ghost'} onClick={() => { setAvatarKind('emoji'); if (!avatarValue) setAvatarValue(EMOJIS[0]) }}>Emoji</button>
+              <label className="btn-ghost" style={{ cursor: 'pointer' }}>
+                Imagen
+                <input type="file" accept="image/*" onChange={onFile} style={{ display: 'none' }} />
+              </label>
+            </div>
+            {avatarKind === 'emoji' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '4px', marginTop: '10px', maxWidth: '340px' }}>
+                {EMOJIS.map((e) => (
+                  <button key={e} type="button" onClick={() => pickEmoji(e)} style={{ fontSize: '22px', padding: '4px', border: avatarValue === e ? '2px solid #6366f1' : '1px solid #334155', borderRadius: '8px', background: '#0f172a' }}>{e}</button>
+                ))}
+              </div>
+            )}
+            {avatarKind === 'image' && avatarValue && (
+              <p className="muted" style={{ marginTop: '8px' }}>Imagen lista. Guarda para aplicar.</p>
+            )}
+          </div>
+        </div>
+      </section>
 
       <section className="card">
         <h2>Datos personales</h2>

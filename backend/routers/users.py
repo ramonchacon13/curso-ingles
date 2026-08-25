@@ -8,6 +8,8 @@ from models import User, Progreso, Lesson, Level, Course, PrivateMessage, ChatMe
 from auth_deps import get_current_user, require_admin
 from auth_utils import hash_password, verify_password
 from sqlalchemy import select, func, delete
+from fastapi.responses import Response
+import base64
 
 router = APIRouter(prefix="/api", tags=["usuarios"])
 
@@ -22,6 +24,8 @@ class PerfilUpdate(BaseModel):
     nombre: str | None = None
     email: str | None = None
     email_opt_in: bool | None = None
+    avatar_kind: str | None = None
+    avatar_value: str | None = None
 
 
 class PasswordUpdate(BaseModel):
@@ -46,8 +50,34 @@ def update_perfil(
             current.email = nuevo
     if data.email_opt_in is not None:
         current.email_opt_in = bool(data.email_opt_in)
+    if data.avatar_kind is not None:
+        kind = data.avatar_kind
+        if kind not in ("initials", "emoji", "image"):
+            raise HTTPException(status_code=400, detail="Tipo de avatar inválido")
+        if kind == "image":
+            val = data.avatar_value
+            if not val or not str(val).startswith("data:image/"):
+                raise HTTPException(status_code=400, detail="Debes proporcionar una imagen válida")
+            if len(val) > 300000:
+                raise HTTPException(status_code=400, detail="Imagen demasiado grande (máx ~300KB)")
+            current.avatar_value = val
+        elif kind == "emoji":
+            val = data.avatar_value
+            if not val or len(str(val)) > 8:
+                raise HTTPException(status_code=400, detail="Emoji inválido")
+            current.avatar_value = str(val)
+        else:
+            current.avatar_value = None
+        current.avatar_kind = kind
     db.commit()
-    return {"ok": True, "nombre": current.nombre, "email": current.email, "email_opt_in": current.email_opt_in}
+    return {
+        "ok": True,
+        "nombre": current.nombre,
+        "email": current.email,
+        "email_opt_in": current.email_opt_in,
+        "avatar_kind": current.avatar_kind,
+        "avatar_value": current.avatar_value,
+    }
 
 
 @router.put("/me/password", response_model=dict)
@@ -158,7 +188,15 @@ def listar_usuarios(
     current: User = Depends(get_current_user),
 ):
     users = db.scalars(select(User).where(User.id != current.id)).all()
-    return [{"id": u.id, "nombre": u.nombre} for u in users]
+    return [
+        {
+            "id": u.id,
+            "nombre": u.nombre,
+            "avatar_kind": u.avatar_kind or "initials",
+            "avatar_value": (u.avatar_value if u.avatar_kind != "image" else None),
+        }
+        for u in users
+    ]
 
 
 @router.get("/usuarios/buscar", response_model=list[dict])
@@ -176,7 +214,15 @@ def buscar_usuarios(
         .where((func.lower(User.nombre).like(like)) | (func.lower(User.email).like(like)))
         .limit(20)
     ).all()
-    return [{"id": u.id, "nombre": u.nombre} for u in users]
+    return [
+        {
+            "id": u.id,
+            "nombre": u.nombre,
+            "avatar_kind": u.avatar_kind or "initials",
+            "avatar_value": (u.avatar_value if u.avatar_kind != "image" else None),
+        }
+        for u in users
+    ]
 
 
 @router.get("/usuarios/{user_id}", response_model=dict)
@@ -188,7 +234,14 @@ def obtener_usuario(
     u = db.get(User, user_id)
     if not u or u.id == current.id:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return {"id": u.id, "nombre": u.nombre, "email": u.email, "role": u.role}
+    return {
+        "id": u.id,
+        "nombre": u.nombre,
+        "email": u.email,
+        "role": u.role,
+        "avatar_kind": u.avatar_kind or "initials",
+        "avatar_value": u.avatar_value,
+    }
 
 
 @router.delete("/usuarios/{user_id}", response_model=dict)
@@ -223,6 +276,8 @@ def _serialize(u):
         "is_premium": u.is_premium,
         "plan": u.plan,
         "email_opt_in": u.email_opt_in,
+        "avatar_kind": u.avatar_kind or "initials",
+        "avatar_value": u.avatar_value,
         "created_at": u.created_at.isoformat() if u.created_at else None,
     }
 
@@ -310,3 +365,21 @@ def admin_actualizar_usuario(
 
     db.commit()
     return _serialize(u)
+
+
+@router.get("/usuarios/{user_id}/avatar")
+def obtener_avatar(user_id: int, db: Session = Depends(get_db)):
+    u = db.get(User, user_id)
+    if not u or u.avatar_kind != "image" or not u.avatar_value or not str(u.avatar_value).startswith("data:image/"):
+        raise HTTPException(status_code=404, detail="Sin avatar")
+    try:
+        header, b64 = u.avatar_value.split(",", 1)
+        raw = base64.b64decode(b64)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Avatar inválido")
+    media = "image/png"
+    if "jpeg" in header or "jpg" in header:
+        media = "image/jpeg"
+    elif "webp" in header:
+        media = "image/webp"
+    return Response(content=raw, media_type=media)

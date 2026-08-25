@@ -22,6 +22,8 @@ class UserOut(BaseModel):
     plan: str
     role: str = "user"
     email_opt_in: bool = True
+    avatar_kind: str = "initials"
+    avatar_value: Optional[str] = None
 
     class Config:
         from_attributes = True

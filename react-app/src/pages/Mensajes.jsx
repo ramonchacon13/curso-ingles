@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { getToken, api } from '../api.js'
 import Icon from '../components/Icon.jsx'
 import EmojiPicker from '../components/EmojiPicker.jsx'
+import Avatar from '../components/Avatar.jsx'
 
 function initials(name) {
   if (!name) return '?'
@@ -149,7 +150,7 @@ export default function Mensajes() {
               ) : (
                 results.map((c) => (
                   <button key={c.id} className="contact" onClick={() => selectPeer(c)}>
-                    <span className="avatar">{initials(c.nombre)}</span>
+                    <Avatar user={c} size={40} />
                     <span className="contact-name">{c.nombre}</span>
                   </button>
                 ))
@@ -180,7 +181,7 @@ export default function Mensajes() {
           ) : (
             <>
               <div className="msg-header">
-                <span className="avatar sm">{initials(peer.nombre)}</span>
+                <Avatar user={peer} size={36} />
                 <div className="msg-header-info">
                   <strong>{peer.nombre}</strong>
                   <small>{peerOnline ? 'En línea' : 'Desconectado'}</small>

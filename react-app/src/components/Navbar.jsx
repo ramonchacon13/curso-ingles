@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import Logo from './Logo.jsx'
 import Icon from './Icon.jsx'
+import Avatar from './Avatar.jsx'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -44,12 +45,13 @@ export default function Navbar() {
         </div>
         <div className="nav-user">
            {user ? (
-             <>
-               <span className="user-name">{user.nombre}</span>
-               {user.role === 'admin' && <span className="role-badge admin">Admin</span>}
-               {user.role === 'moderator' && <span className="role-badge moderator">Mod</span>}
-               <button className="btn-ghost" onClick={handleLogout}>Salir</button>
-             </>
+              <>
+                <Avatar user={user} size={32} />
+                <span className="user-name">{user.nombre}</span>
+                {user.role === 'admin' && <span className="role-badge admin">Admin</span>}
+                {user.role === 'moderator' && <span className="role-badge moderator">Mod</span>}
+                <button className="btn-ghost" onClick={handleLogout}>Salir</button>
+              </>
            ) : (
             <>
               <Link to="/login" className="btn-ghost" onClick={() => setOpen(false)}>Entrar</Link>

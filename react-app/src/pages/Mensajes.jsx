@@ -117,6 +117,12 @@ export default function Mensajes() {
     setInput('')
   }
 
+  const clearRecent = () => {
+    if (!window.confirm('¿Limpiar el historial de conversaciones? Esto solo quita la lista local, no borra usuarios.')) return
+    setRecent([])
+    try { localStorage.removeItem('pm_recent') } catch {}
+  }
+
   const deleteUser = async () => {
     if (!peer) return
     if (!window.confirm(`¿Eliminar a ${peer.nombre} y todos sus datos de forma permanente?`)) return
@@ -127,7 +133,14 @@ export default function Mensajes() {
       try { localStorage.setItem('pm_recent', JSON.stringify(next)) } catch {}
       setPeer(null)
     } catch (e) {
-      window.alert(e?.message || 'No se pudo eliminar el usuario')
+      if (e?.status === 404) {
+        const next = recent.filter((x) => x.id !== peer.id)
+        setRecent(next)
+        try { localStorage.setItem('pm_recent', JSON.stringify(next)) } catch {}
+        setPeer(null)
+      } else {
+        window.alert(e?.message || 'No se pudo eliminar el usuario')
+      }
     }
   }
 
@@ -136,7 +149,12 @@ export default function Mensajes() {
       <h1 className="mensajes-title">Mensajes privados</h1>
       <div className="msg-layout">
         <aside className="msg-sidebar">
-          <div className="msg-sidebar-head">Conversar</div>
+          <div className="msg-sidebar-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Conversar</span>
+            {recent.length > 0 && (
+              <button className="btn-ghost" style={{ fontSize: '12px', padding: '2px 8px' }} onClick={clearRecent}>Limpiar</button>
+            )}
+          </div>
           <input
             className="msg-search"
             placeholder="Buscar usuario por nombre o correo…"

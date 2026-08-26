@@ -7,7 +7,7 @@ MAIL_HOST = os.getenv("MAIL_HOST", "")
 MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
 MAIL_USER = os.getenv("MAIL_USER", "")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
-MAIL_FROM = os.getenv("MAIL_FROM", "CursoInglés <no-reply@cursoingles.com>")
+MAIL_FROM = os.getenv("MAIL_FROM", "Best English <no-reply@bestenglish.com>")
 
 PRIMARY = "#6c5ce7"
 PRIMARY_DARK = "#4b3fd1"
@@ -27,7 +27,7 @@ def _wrap(title, body_html):
       {body_html}
     </div>
     <div style="padding:16px 26px;background:#fafbff;color:#8a94a6;font-size:12px;border-top:1px solid #eef1f6;">
-      Recibes este correo de CursoInglés. Si no quieres recibir resúmenes, puedes desactivarlos en tu perfil.
+      Recibes este correo de Best English. Si no quieres recibir resúmenes, puedes desactivarlos en tu perfil.
     </div>
   </div>
 </body>
@@ -57,12 +57,12 @@ def send_email(to, subject, html):
 
 def send_welcome(to, name):
     body = f"""
-      <p>Hola <b>{name or 'estudiante'}</b>, ¡bienvenido a <b>CursoInglés</b>! 🎉</p>
+      <p>Hola <b>{name or 'estudiante'}</b>, ¡bienvenido a <b>Best English</b>! 🎉</p>
       <p>Ya puedes practicar inglés gratis: lecciones, tests y un chat con la comunidad.</p>
       <p style="margin-top:18px;"><a href="{os.getenv('FRONTEND_URL', '')}/cursos"
          style="background:{PRIMARY};color:#fff;padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:600;">Empezar ahora</a></p>
     """
-    return send_email(to, "¡Bienvenido a CursoInglés! 🎉", _wrap("Bienvenido 👋", body))
+    return send_email(to, "¡Bienvenido a Best English! 🎉", _wrap("Bienvenido 👋", body))
 
 
 def send_password_reset(to, name, link):
@@ -86,7 +86,7 @@ def send_weekly_progress(to, name, data):
       <p style="margin-top:18px;"><a href="{os.getenv('FRONTEND_URL', '')}/dashboard"
          style="background:{PRIMARY};color:#fff;padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:600;">Ver mi progreso</a></p>
     """
-    return send_email(to, "Tu resumen semanal de CursoInglés", _wrap("Resumen semanal 📈", body))
+    return send_email(to, "Tu resumen semanal de Best English", _wrap("Resumen semanal 📈", body))
 
 
 def send_premium_expiry(to, name, days):

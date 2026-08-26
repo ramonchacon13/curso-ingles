@@ -7,7 +7,7 @@ from database import engine, Base
 import models
 from config import SESSION_SECRET
 
-app = FastAPI(title="CursoIngles API")
+app = FastAPI(title="Best English API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,7 +30,7 @@ app.include_router(google_auth.router)
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "app": "CursoIngles"}
+    return {"status": "ok", "app": "Best English"}
 
 
 try:

@@ -47,7 +47,7 @@ export default function App() {
         </Routes>
       </main>
       <footer className="footer">
-        <p>© {new Date().getFullYear()} CursoInglés · Aprende inglés gratis</p>
+        <p>© {new Date().getFullYear()} Best English · Aprende inglés gratis</p>
       </footer>
     </div>
   )

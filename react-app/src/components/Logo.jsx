@@ -1,6 +1,6 @@
 export default function Logo({ size = 32 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="CursoInglés">
+    <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Best English">
       <defs>
         <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#1f6feb" />

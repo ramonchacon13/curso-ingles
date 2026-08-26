@@ -76,7 +76,7 @@ export default function Membership() {
       </div>
 
       <div className="donate-card">
-        <h2><Icon name="star" size={20} /> Apoya CursoInglés</h2>
+        <h2><Icon name="star" size={20} /> Apoya Best English</h2>
         <p>Tu aporte nos ayuda a mantener la plataforma y crear más contenido gratis.</p>
 
         <a className="pay-btn paypal" href={DONACION.paypal} target="_blank" rel="noopener noreferrer">

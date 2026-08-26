@@ -25,7 +25,7 @@ export default function Navbar() {
     <nav className="navbar">
       <Link to="/" className="brand" onClick={() => setOpen(false)}>
         <Logo size={30} />
-        <span>Curso<b>Inglés</b></span>
+          <span>Best <b>English</b></span>
       </Link>
 
       <button className="nav-toggle" onClick={() => setOpen(!open)} aria-label="Menú">

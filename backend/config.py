@@ -13,7 +13,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v3")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-APP_NAME = "CursoIngles API"
+APP_NAME = "Best English API"
 
 # Lista de correos (separados por coma) que tendrán rol de administrador.
 # Se aplican al arranque. Para añadir moderadores, asígnales el rol manualmente

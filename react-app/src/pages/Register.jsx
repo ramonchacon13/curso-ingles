@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import GoogleButton from '../components/GoogleButton.jsx'
 
 export default function Register() {
   const { register } = useAuth()
@@ -30,8 +29,6 @@ export default function Register() {
     <div className="auth-page">
       <h1>Crear cuenta</h1>
       {error && <div className="alert-error">{error}</div>}
-      <GoogleButton label="Registrarme con Google" />
-      <div className="auth-divider"><span>o con tu correo</span></div>
       <form onSubmit={submit} className="auth-form">
         <label>Nombre</label>
         <input value={nombre} onChange={(e) => setNombre(e.target.value)} required />

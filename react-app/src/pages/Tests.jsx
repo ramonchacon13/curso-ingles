@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
 import SpeakButton from '../components/SpeakButton.jsx'
+import { isSpanish } from '../lib/lang.js'
 
 export default function Tests() {
   const { refresh, user } = useAuth()
@@ -92,7 +93,7 @@ export default function Tests() {
               <div key={q.id} className="question">
                 <p className="question-prompt">
                   <span className="q-number">{i + 1}</span> {q.prompt}
-                  <SpeakButton text={q.prompt} />
+                  {!isSpanish(q.prompt) && <SpeakButton text={q.prompt} />}
                 </p>
                 {q.options.map((opt, oi) => (
                   <label
@@ -106,7 +107,7 @@ export default function Tests() {
                       onChange={() => setAnswers((a) => ({ ...a, [i]: oi }))}
                     />
                     {opt}
-                    <SpeakButton text={opt} size={14} />
+                    {!isSpanish(opt) && <SpeakButton text={opt} size={14} />}
                   </label>
                 ))}
                 <div className="question-feedback">

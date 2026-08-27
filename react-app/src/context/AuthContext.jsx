@@ -6,6 +6,14 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser())
 
+  useEffect(() => {
+    const t = getToken()
+    if (t && (!user || !user.id)) {
+      refresh()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const login = async (email, password) => {
     const data = await api.post('/auth/login', { email, password })
     setSession(data.token, data.user)

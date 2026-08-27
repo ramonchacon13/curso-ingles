@@ -15,14 +15,13 @@ export default function OAuthCallback() {
       navigate(`/login?error=${error}`, { replace: true })
       return
     }
-    if (token) {
-      setSession(token, {})
-      refresh()
-        .then(() => navigate('/dashboard', { replace: true }))
-        .catch(() => navigate('/login', { replace: true }))
-    } else {
+    if (!token) {
       navigate('/login', { replace: true })
+      return
     }
+    setSession(token, {})
+    navigate('/dashboard', { replace: true })
+    refresh().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

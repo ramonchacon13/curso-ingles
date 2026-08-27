@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { api, getStoredUser, setSession, clearSession } from '../api.js'
 
 const AuthContext = createContext(null)
@@ -6,13 +6,6 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser())
 
-  useEffect(() => {
-    const t = getToken()
-    if (t && (!user || !user.id)) {
-      refresh()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   const login = async (email, password) => {
     const data = await api.post('/auth/login', { email, password })

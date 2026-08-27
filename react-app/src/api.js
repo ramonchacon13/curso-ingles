@@ -1,23 +1,37 @@
 const TOKEN_KEY = 'cursoingles_token'
 const USER_KEY = 'cursoingles_user'
+let memToken = null
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY)
+  try {
+    const t = localStorage.getItem(TOKEN_KEY)
+    if (t) return t
+  } catch {}
+  return memToken
 }
 
 export function setSession(token, user) {
-  localStorage.setItem(TOKEN_KEY, token)
-  localStorage.setItem(USER_KEY, JSON.stringify(user))
+  memToken = token
+  try {
+    localStorage.setItem(TOKEN_KEY, token)
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+  } catch {}
 }
 
 export function clearSession() {
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(USER_KEY)
+  memToken = null
+  try {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+  } catch {}
 }
 
 export function getStoredUser() {
-  const raw = localStorage.getItem(USER_KEY)
-  return raw ? JSON.parse(raw) : null
+  try {
+    const raw = localStorage.getItem(USER_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {}
+  return null
 }
 
 export const API_BASE = import.meta.env.VITE_API_URL || 'https://curso-ingles-api.onrender.com'

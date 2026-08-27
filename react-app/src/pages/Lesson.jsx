@@ -4,6 +4,30 @@ import { api, userApi } from '../api.js'
 import Icon from '../components/Icon.jsx'
 import SpeakButton from '../components/SpeakButton.jsx'
 
+const SPANISH_MARKERS = [
+  'él', 'tú', 'ella', 'eso', 'nosotros', 'ellos', 'verbo', 'sustantivo',
+  'adjetivo', 'negativo', 'pregunta', 'ejemplo', 'traducción', 'nacionalidad',
+  'significa', 'usamos', 'cuando', 'donde', 'comer', 'beber', 'dormir',
+  'hablar', 'casa', 'libro', 'agua', 'muy', 'bien', 'pero', 'como', 'está',
+  'estan', 'son', ' la ', ' el ', ' los ', ' las ', ' una ', ' un ', ' de ',
+  ' y ', ' con ', ' para ', ' por ', ' su ', ' se ',
+]
+
+function lessonAudioText(content) {
+  if (!content) return ''
+  const labelRe = /^(ejemplo|ej|negativo|positivo|pregunta|nota|tip|traducci[oó]n|respuesta)\s*[:\-]\s*/i
+  return content
+    .split('\n')
+    .map((l) => l.replace(labelRe, ''))
+    .filter((l) => {
+      const t = l.toLowerCase()
+      if (!t.trim()) return false
+      if (t.includes(' = ')) return false
+      return !SPANISH_MARKERS.some((w) => t.includes(w))
+    })
+    .join(' ')
+}
+
 export default function Lesson() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -61,11 +85,11 @@ export default function Lesson() {
       <h1>{lesson.title}</h1>
       <div className="lesson-audio">
         <SpeakButton
-          text={lesson.content ? lesson.content.replace(/\n/g, ' ') : ''}
-          label="Escuchar la lección"
+          text={lessonAudioText(lesson.content)}
+          label="Escuchar ejemplos en inglés"
           size={18}
         />
-        <span className="muted small">Escucha la pronunciación de la lección</span>
+        <span className="muted small">Escucha los ejemplos en inglés de la lección</span>
       </div>
       <div className="lesson-content">{lesson.content}</div>
       <button

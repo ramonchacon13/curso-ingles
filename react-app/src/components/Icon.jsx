@@ -36,6 +36,13 @@ const icons = {
       <polygon points="22 2 15 22 11 13 2 9 22 2" />
     </>
   ),
+  volume: (
+    <>
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+    </>
+  ),
   menu: (
     <>
       <line x1="3" y1="12" x2="21" y2="12" />

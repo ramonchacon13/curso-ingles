@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
+import SpeakButton from '../components/SpeakButton.jsx'
 
 export default function Tests() {
   const { refresh, user } = useAuth()
@@ -14,6 +15,9 @@ export default function Tests() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [openTips, setOpenTips] = useState({})
+
+  const toggleTip = (i) => setOpenTips((t) => ({ ...t, [i]: !t[i] }))
 
   useEffect(() => {
     api.get('/niveles').then((d) => {
@@ -81,22 +85,48 @@ export default function Tests() {
         <div className="test-active">
           <button className="back-link" onClick={() => setActive(null)}>← Volver</button>
           <h2>{active.title}</h2>
-          {active.questions.map((q, i) => (
-            <div key={q.id} className="question">
-              <p className="question-prompt"><span className="q-number">{i + 1}</span> {q.prompt}</p>
-              {q.options.map((opt, oi) => (
-                <label key={oi} className="option">
-                  <input
-                    type="radio"
-                    name={`q-${i}`}
-                    checked={answers[i] === oi}
-                    onChange={() => setAnswers((a) => ({ ...a, [i]: oi }))}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
-          ))}
+          {active.questions.map((q, i) => {
+            const answered = answers[i] !== undefined
+            const isCorrect = answered && answers[i] === q.correct
+            return (
+              <div key={q.id} className="question">
+                <p className="question-prompt">
+                  <span className="q-number">{i + 1}</span> {q.prompt}
+                  <SpeakButton text={q.prompt} />
+                </p>
+                {q.options.map((opt, oi) => (
+                  <label
+                    key={oi}
+                    className={`option ${answered ? (oi === q.correct ? 'correct' : answers[i] === oi ? 'wrong' : '') : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`q-${i}`}
+                      checked={answers[i] === oi}
+                      onChange={() => setAnswers((a) => ({ ...a, [i]: oi }))}
+                    />
+                    {opt}
+                    <SpeakButton text={opt} size={14} />
+                  </label>
+                ))}
+                <div className="question-feedback">
+                  {answered ? (
+                    <>
+                      <span className={isCorrect ? 'ok' : 'bad'}>{isCorrect ? '✓ Correcto' : '✗ Incorrecto'}</span>
+                      {q.explanation && <p className="theory-tip">💡 {q.explanation}</p>}
+                    </>
+                  ) : q.explanation ? (
+                    <>
+                      <button type="button" className="tip-toggle" onClick={() => toggleTip(i)}>
+                        💡 {openTips[i] ? 'Ocultar tip de teoría' : 'Ver tip de teoría'}
+                      </button>
+                      {openTips[i] && <p className="theory-tip">💡 {q.explanation}</p>}
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
           {error && <div className="alert-error">{error}</div>}
           <button className="btn-primary" onClick={submit}>Enviar test</button>
 

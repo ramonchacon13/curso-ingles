@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api, userApi } from '../api.js'
 import Icon from '../components/Icon.jsx'
+import SpeakButton from '../components/SpeakButton.jsx'
 
 export default function Lesson() {
   const { id } = useParams()
@@ -58,6 +59,14 @@ export default function Lesson() {
     <div className="lesson-page">
       <Link to="/cursos" className="back-link">← Volver a cursos</Link>
       <h1>{lesson.title}</h1>
+      <div className="lesson-audio">
+        <SpeakButton
+          text={lesson.content ? lesson.content.replace(/\n/g, ' ') : ''}
+          label="Escuchar la lección"
+          size={18}
+        />
+        <span className="muted small">Escucha la pronunciación de la lección</span>
+      </div>
       <div className="lesson-content">{lesson.content}</div>
       <button
         className={`btn-complete ${completada ? 'done' : ''}`}

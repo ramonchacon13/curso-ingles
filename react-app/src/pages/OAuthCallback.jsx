@@ -17,6 +17,7 @@ export default function OAuthCallback() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { refresh, setUser } = useAuth()
+  const [status, setStatus] = useState('Procesando…')
   const [err, setErr] = useState(null)
 
   useEffect(() => {
@@ -31,10 +32,15 @@ export default function OAuthCallback() {
         navigate('/login', { replace: true })
         return
       }
+      setStatus('Guardando sesión…')
       setSession(token, {})
+      setStatus('Decodificando usuario…')
       const sub = decodeSub(token)
+      setStatus('Usuario: ' + sub)
       if (sub) setUser({ id: sub })
+      setStatus('Navegando al dashboard…')
       navigate('/dashboard', { replace: true })
+      setStatus('Refrescando datos…')
       refresh().catch(() => {})
     } catch (e) {
       console.error('OAuthCallback error', e)
@@ -45,9 +51,9 @@ export default function OAuthCallback() {
 
   if (err) {
     return (
-      <div className="auth-page">
+      <div className="auth-page" style={{ padding: 24 }}>
         <p>Error al iniciar sesión con Google:</p>
-        <pre>{err}</pre>
+        <pre style={{ whiteSpace: 'pre-wrap', color: '#f87171' }}>{err}</pre>
         <button className="btn-primary" onClick={() => navigate('/login')}>
           Volver al inicio de sesión
         </button>
@@ -57,7 +63,7 @@ export default function OAuthCallback() {
 
   return (
     <div className="auth-page">
-      <p>Entrando…</p>
+      <p>{status}</p>
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import os
+from urllib.parse import quote
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -44,10 +45,18 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     fx = _frontend()
     if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET):
         return RedirectResponse(f"{fx}/login?error=oauth_disabled")
+
+    gerr = request.query_params.get("error")
+    if gerr:
+        desc = request.query_params.get("error_description", "")
+        print("GOOGLE_OAUTH_ERROR:", gerr, desc)
+        return RedirectResponse(f"{fx}/login?error=oauth&reason={quote(gerr)}")
+
     try:
         token = await oauth.google.authorize_access_token(request)
-    except Exception:
-        return RedirectResponse(f"{fx}/login?error=oauth")
+    except Exception as e:
+        print("GOOGLE_OAUTH_EXCEPTION:", repr(e))
+        return RedirectResponse(f"{fx}/login?error=oauth&reason=token_exchange")
 
     userinfo = token.get("userinfo")
     if not userinfo:

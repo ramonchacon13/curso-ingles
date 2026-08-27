@@ -168,10 +168,15 @@ a:hover { text-decoration: none; }
 .question { background: #fff; padding: 20px; border-radius: 14px; margin-bottom: 14px; box-shadow: var(--sombra); border-left: 4px solid var(--azul); }
 .question-prompt { display: flex; align-items: flex-start; gap: 10px; font-size: 1.16rem; font-weight: 700; color: var(--azul-osc); line-height: 1.45; margin-bottom: 10px; }
 .q-number { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--azul), var(--verde)); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
-.option { display: block; padding: 7px 0; cursor: pointer; }
+.option { display: block; padding: 7px 10px; border: 1px solid transparent; border-radius: 10px; cursor: pointer; margin: 2px 0; }
+.option.selected { background: rgba(0,114,206,.1); border-color: var(--azul); }
 .test-card { background: #fff; padding: 18px 22px; border-radius: 12px; border: 1px solid var(--borde); cursor: pointer; width: 100%; text-align: left; margin-bottom: 12px; font-weight: 600; box-shadow: var(--sombra); }
 .test-card:hover { border-color: var(--azul); }
-.test-result { background: #e6fff2; padding: 20px; border-radius: 12px; margin-top: 18px; }
+.review-title { color: var(--azul-osc); margin-top: 26px; }
+.review-card { background: #fff; padding: 18px 20px; border-radius: 14px; margin-bottom: 14px; box-shadow: var(--sombra); border-left: 4px solid var(--azul); }
+.review-card.good { border-left-color: var(--verde); }
+.review-card.bad { border-left-color: #e23; }
+.review-answer { margin: 4px 0; font-size: 15px; }
 
 /* MENSAJES PRIVADOS */
 .mensajes { max-width: 960px; margin: 0 auto; }

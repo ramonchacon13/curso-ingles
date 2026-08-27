@@ -13,12 +13,10 @@ export default function Tests() {
   const [tests, setTests] = useState([])
   const [active, setActive] = useState(null)
   const [answers, setAnswers] = useState({})
+  const [phase, setPhase] = useState('taking')
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
-  const [openTips, setOpenTips] = useState({})
-
-  const toggleTip = (i) => setOpenTips((t) => ({ ...t, [i]: !t[i] }))
 
   useEffect(() => {
     api.get('/niveles').then((d) => {
@@ -33,6 +31,7 @@ export default function Tests() {
     setActive(null)
     setResult(null)
     setAnswers({})
+    setPhase('taking')
     const data = await api.get(`/niveles/${code}/tests`)
     setTests(data)
   }
@@ -41,6 +40,7 @@ export default function Tests() {
     setActive(t)
     setAnswers({})
     setResult(null)
+    setPhase('taking')
   }
 
   const submit = async () => {
@@ -53,6 +53,7 @@ export default function Tests() {
     try {
       const r = await api.post('/tests/submit', { test_id: active.id, answers: ans })
       setResult(r)
+      setPhase('result')
       if (r.nivel_actualizado) await refresh()
     } catch (err) {
       setError(err.message)
@@ -82,66 +83,73 @@ export default function Tests() {
         </div>
       )}
 
-      {active && (
+      {active && phase === 'taking' && (
         <div className="test-active">
           <button className="back-link" onClick={() => setActive(null)}>← Volver</button>
           <h2>{active.title}</h2>
+          <p className="muted">Responde todas las preguntas. No sabrás si están bien hasta el final.</p>
+          {active.questions.map((q, i) => (
+            <div key={q.id} className="question">
+              <p className="question-prompt">
+                <span className="q-number">{i + 1}</span> {q.prompt}
+                {!isSpanish(q.prompt) && <SpeakButton text={q.prompt} />}
+              </p>
+              {q.options.map((opt, oi) => (
+                <label key={oi} className={`option ${answers[i] === oi ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name={`q-${i}`}
+                    checked={answers[i] === oi}
+                    onChange={() => setAnswers((a) => ({ ...a, [i]: oi }))}
+                  />
+                  {opt}
+                  {!isSpanish(opt) && <SpeakButton text={opt} size={14} />}
+                </label>
+              ))}
+            </div>
+          ))}
+          {error && <div className="alert-error">{error}</div>}
+          <button className="btn-primary" onClick={submit}>Terminar y ver resultado</button>
+        </div>
+      )}
+
+      {active && phase === 'result' && result && (
+        <div className="test-active">
+          <button className="back-link" onClick={() => setActive(null)}>← Volver a los tests</button>
+          <h2>Resultado: {result.score} / {result.total}</h2>
+          <p className="muted">{Math.round((result.score / result.total) * 100)}% de aciertos</p>
+          {result.nivel_actualizado ? (
+            <div className="alert ok">¡Felicidades! Tu nivel se actualizó a <strong>{result.nivel}</strong>.</div>
+          ) : (
+            <p className="muted">Acierta al menos el 60% para que tu nivel se actualice automáticamente.</p>
+          )}
+
+          <h3 className="review-title">Corrección y aprendizaje</h3>
+          <p className="muted">Revisa cada pregunta, tu respuesta y la correcta. Lee el tip para reforzar.</p>
           {active.questions.map((q, i) => {
-            const answered = answers[i] !== undefined
-            const isCorrect = answered && answers[i] === q.correct
+            const chosen = answers[i]
+            const ok = chosen === q.correct
             return (
-              <div key={q.id} className="question">
+              <div key={q.id} className={`review-card ${ok ? 'good' : 'bad'}`}>
                 <p className="question-prompt">
                   <span className="q-number">{i + 1}</span> {q.prompt}
                   {!isSpanish(q.prompt) && <SpeakButton text={q.prompt} />}
                 </p>
-                {q.options.map((opt, oi) => (
-                  <label
-                    key={oi}
-                    className={`option ${answered ? (oi === q.correct ? 'correct' : answers[i] === oi ? 'wrong' : '') : ''}`}
-                  >
-                    <input
-                      type="radio"
-                      name={`q-${i}`}
-                      checked={answers[i] === oi}
-                      onChange={() => setAnswers((a) => ({ ...a, [i]: oi }))}
-                    />
-                    {opt}
-                    {!isSpanish(opt) && <SpeakButton text={opt} size={14} />}
-                  </label>
-                ))}
-                <div className="question-feedback">
-                  {answered ? (
-                    <>
-                      <span className={isCorrect ? 'ok' : 'bad'}>{isCorrect ? '✓ Correcto' : '✗ Incorrecto'}</span>
-                      {q.explanation && <p className="theory-tip">💡 {q.explanation}</p>}
-                    </>
-                  ) : q.explanation ? (
-                    <>
-                      <button type="button" className="tip-toggle" onClick={() => toggleTip(i)}>
-                        💡 {openTips[i] ? 'Ocultar tip de teoría' : 'Ver tip de teoría'}
-                      </button>
-                      {openTips[i] && <p className="theory-tip">💡 {q.explanation}</p>}
-                    </>
-                  ) : null}
-                </div>
+                <p className={ok ? 'ok' : 'bad'}>
+                  {ok ? '✓ Tu respuesta fue correcta' : '✗ Tu respuesta fue incorrecta'}
+                </p>
+                <p className="review-answer">
+                  <strong>Tu respuesta:</strong> {q.options[chosen]}
+                  {!isSpanish(q.options[chosen]) && <SpeakButton text={q.options[chosen]} size={14} />}
+                </p>
+                <p className="review-answer">
+                  <strong>Respuesta correcta:</strong> {q.options[q.correct]}
+                  {!isSpanish(q.options[q.correct]) && <SpeakButton text={q.options[q.correct]} size={14} />}
+                </p>
+                {q.explanation && <p className="theory-tip">💡 {q.explanation}</p>}
               </div>
             )
           })}
-          {error && <div className="alert-error">{error}</div>}
-          <button className="btn-primary" onClick={submit}>Enviar test</button>
-
-          {result && (
-            <div className="test-result">
-              <h3>Resultado: {result.score} / {result.total}</h3>
-              <p>{Math.round((result.score / result.total) * 100)}% de aciertos</p>
-              {result.nivel_actualizado ? (
-                <div className="alert ok">¡Felicidades! Tu nivel se actualizó a <strong>{result.nivel}</strong>.</div>
-              ) : (
-                <p className="muted">Acierta al menos el 60% para que tu nivel se actualice automáticamente.</p>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>

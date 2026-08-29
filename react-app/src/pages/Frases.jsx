@@ -1,18 +1,9 @@
 import { useState } from 'react'
 import { CATEGORIES, STORY } from '../data/frases.js'
 import SpeakButton from '../components/SpeakButton.jsx'
+import Illustration from '../components/Illustration.jsx'
 
 const KNOWN_KEY = 'bestenglish_frases_known'
-
-function hash(str) {
-  let h = 0
-  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0
-  return h
-}
-
-function imgUrl(tag, seed) {
-  return `https://loremflickr.com/480/320/${tag}?lock=${(hash(seed) % 1000) + 1}`
-}
 
 function loadKnown() {
   try {
@@ -74,7 +65,7 @@ export default function Frases() {
               const id = `${cat.id}-${i}`
               return (
                 <div key={id} className={`phrase-card ${known[id] ? 'known' : ''}`}>
-                  <img className="phrase-img" src={imgUrl(cat.img, cat.id)} alt={cat.title} loading="lazy" />
+                  <Illustration name={cat.img} size={64} />
                   <div className="phrase-en">
                     <SpeakButton text={p.en} />
                     <span>{p.en}</span>
@@ -106,7 +97,7 @@ export default function Frases() {
             const id = `s-${i}`
             return (
               <div key={id} className="story-line">
-                <img className="story-img" src={imgUrl(l.img, `story-${i}`)} alt={l.speaker} loading="lazy" />
+                <Illustration name={l.img} size={56} />
                 <div className="story-speaker">{l.speaker}</div>
                 <div className="story-en">
                   <SpeakButton text={l.en} />

@@ -2,7 +2,7 @@ export const CATEGORIES = [
   {
     id: 'saludos',
     title: 'Saludos y presentaciones',
-    img: 'friends',
+    img: 'people',
     phrases: [
       { en: "Hi, I'm Alex. Nice to meet you.", es: "Hola, soy Alex. Encantado de conocerte." },
       { en: "What's your name?", es: "¿Cómo te llamas?" },
@@ -28,7 +28,7 @@ export const CATEGORIES = [
   {
     id: 'tienda',
     title: 'De compras',
-    img: 'shopping',
+    img: 'bag',
     phrases: [
       { en: "How much does this cost?", es: "¿Cuánto cuesta esto?" },
       { en: "Do you have this in a larger size?", es: "¿Tienen esto en una talla más grande?" },
@@ -54,7 +54,7 @@ export const CATEGORIES = [
   {
     id: 'emergencias',
     title: 'Ayuda y emergencias',
-    img: 'ambulance',
+    img: 'cross',
     phrases: [
       { en: "Help! Call a doctor!", es: "¡Socorro! ¡Llame a un médico!" },
       { en: "I need a police officer.", es: "Necesito a un agente de policía." },
@@ -86,7 +86,7 @@ export const STORY = {
     { speaker: 'Tú', en: "A medium latte, please. To go.", es: "Un latte mediano, por favor. Para llevar.", img: 'coffee' },
     { speaker: 'Barista', en: "Sure! Anything to eat?", es: "¡Claro! ¿Algo para comer?", img: 'muffin' },
     { speaker: 'Tú', en: "A blueberry muffin sounds great.", es: "Un muffin de arándanos suena estupendo.", img: 'muffin' },
-    { speaker: 'Barista', en: "That'll be four fifty. Cash or card?", es: "Son cuatro cincuenta. ¿Efectivo o tarjeta?", img: 'credit' },
-    { speaker: 'Tú', en: "Card, thanks. Have a nice day!", es: "Tarjeta, gracias. ¡Que tenga un buen día!", img: 'friends' },
+    { speaker: 'Barista', en: "That'll be four fifty. Cash or card?", es: "Son cuatro cincuenta. ¿Efectivo o tarjeta?", img: 'card' },
+    { speaker: 'Tú', en: "Card, thanks. Have a nice day!", es: "Tarjeta, gracias. ¡Que tenga un buen día!", img: 'people' },
   ],
 }

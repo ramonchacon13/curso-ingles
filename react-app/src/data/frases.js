@@ -2,6 +2,7 @@ export const CATEGORIES = [
   {
     id: 'saludos',
     title: 'Saludos y presentaciones',
+    img: 'people',
     phrases: [
       { en: "Hi, I'm Alex. Nice to meet you.", es: "Hola, soy Alex. Encantado de conocerte." },
       { en: "What's your name?", es: "¿Cómo te llamas?" },
@@ -14,6 +15,7 @@ export const CATEGORIES = [
   {
     id: 'cafe',
     title: 'En el café o restaurante',
+    img: 'coffee',
     phrases: [
       { en: "A coffee and a croissant, please.", es: "Un café y un croissant, por favor." },
       { en: "Can I see the menu?", es: "¿Puedo ver el menú?" },
@@ -26,6 +28,7 @@ export const CATEGORIES = [
   {
     id: 'tienda',
     title: 'De compras',
+    img: 'bag',
     phrases: [
       { en: "How much does this cost?", es: "¿Cuánto cuesta esto?" },
       { en: "Do you have this in a larger size?", es: "¿Tienen esto en una talla más grande?" },
@@ -38,6 +41,7 @@ export const CATEGORIES = [
   {
     id: 'direcciones',
     title: 'Pedir direcciones',
+    img: 'map',
     phrases: [
       { en: "Excuse me, where is the station?", es: "Disculpe, ¿dónde está la estación?" },
       { en: "How do I get to the museum?", es: "¿Cómo llego al museo?" },
@@ -50,6 +54,7 @@ export const CATEGORIES = [
   {
     id: 'emergencias',
     title: 'Ayuda y emergencias',
+    img: 'cross',
     phrases: [
       { en: "Help! Call a doctor!", es: "¡Socorro! ¡Llame a un médico!" },
       { en: "I need a police officer.", es: "Necesito a un agente de policía." },
@@ -62,6 +67,7 @@ export const CATEGORIES = [
   {
     id: 'trabajo',
     title: 'Trabajo y estudios',
+    img: 'laptop',
     phrases: [
       { en: "I have a meeting at three.", es: "Tengo una reunión a las tres." },
       { en: "Could you repeat that, please?", es: "¿Podría repetir eso, por favor?" },
@@ -76,11 +82,11 @@ export const CATEGORIES = [
 export const STORY = {
   title: 'En el café',
   lines: [
-    { speaker: 'Barista', en: "Hi! What can I get for you today?", es: "¡Hola! ¿Qué le sirvo hoy?" },
-    { speaker: 'Tú', en: "A medium latte, please. To go.", es: "Un latte mediano, por favor. Para llevar." },
-    { speaker: 'Barista', en: "Sure! Anything to eat?", es: "¡Claro! ¿Algo para comer?" },
-    { speaker: 'Tú', en: "A blueberry muffin sounds great.", es: "Un muffin de arándanos suena estupendo." },
-    { speaker: 'Barista', en: "That'll be four fifty. Cash or card?", es: "Son cuatro cincuenta. ¿Efectivo o tarjeta?" },
-    { speaker: 'Tú', en: "Card, thanks. Have a nice day!", es: "Tarjeta, gracias. ¡Que tenga un buen día!" },
+    { speaker: 'Barista', en: "Hi! What can I get for you today?", es: "¡Hola! ¿Qué le sirvo hoy?", img: 'coffee' },
+    { speaker: 'Tú', en: "A medium latte, please. To go.", es: "Un latte mediano, por favor. Para llevar.", img: 'coffee' },
+    { speaker: 'Barista', en: "Sure! Anything to eat?", es: "¡Claro! ¿Algo para comer?", img: 'muffin' },
+    { speaker: 'Tú', en: "A blueberry muffin sounds great.", es: "Un muffin de arándanos suena estupendo.", img: 'muffin' },
+    { speaker: 'Barista', en: "That'll be four fifty. Cash or card?", es: "Son cuatro cincuenta. ¿Efectivo o tarjeta?", img: 'card' },
+    { speaker: 'Tú', en: "Card, thanks. Have a nice day!", es: "Tarjeta, gracias. ¡Que tenga un buen día!", img: 'people' },
   ],
 }

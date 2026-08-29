@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CATEGORIES, STORY } from '../data/frases.js'
 import SpeakButton from '../components/SpeakButton.jsx'
+import Illustration from '../components/Illustration.jsx'
 
 const KNOWN_KEY = 'bestenglish_frases_known'
 
@@ -64,6 +65,7 @@ export default function Frases() {
               const id = `${cat.id}-${i}`
               return (
                 <div key={id} className={`phrase-card ${known[id] ? 'known' : ''}`}>
+                  <Illustration name={cat.img} size={64} />
                   <div className="phrase-en">
                     <SpeakButton text={p.en} />
                     <span>{p.en}</span>
@@ -95,6 +97,7 @@ export default function Frases() {
             const id = `s-${i}`
             return (
               <div key={id} className="story-line">
+                <Illustration name={l.img} size={56} />
                 <div className="story-speaker">{l.speaker}</div>
                 <div className="story-en">
                   <SpeakButton text={l.en} />
